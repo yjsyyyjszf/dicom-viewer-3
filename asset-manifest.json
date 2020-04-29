@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/dicom-viewer/static/css/main.fa5b3062.chunk.css",
+    "main.js": "/dicom-viewer/static/js/main.ae3ff066.chunk.js",
+    "main.js.map": "/dicom-viewer/static/js/main.ae3ff066.chunk.js.map",
+    "runtime~main.js": "/dicom-viewer/static/js/runtime~main.9fe2b979.js",
+    "runtime~main.js.map": "/dicom-viewer/static/js/runtime~main.9fe2b979.js.map",
+    "static/js/2.968b6e89.chunk.js": "/dicom-viewer/static/js/2.968b6e89.chunk.js",
+    "static/js/2.968b6e89.chunk.js.map": "/dicom-viewer/static/js/2.968b6e89.chunk.js.map",
+    "index.html": "/dicom-viewer/index.html",
+    "precache-manifest.50395fd71b9acc44c1d75fca57d00f31.js": "/dicom-viewer/precache-manifest.50395fd71b9acc44c1d75fca57d00f31.js",
+    "service-worker.js": "/dicom-viewer/service-worker.js",
+    "static/css/main.fa5b3062.chunk.css.map": "/dicom-viewer/static/css/main.fa5b3062.chunk.css.map"
+  }
+}
