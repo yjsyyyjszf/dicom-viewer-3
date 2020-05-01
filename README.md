@@ -4,7 +4,7 @@
 </div>
 
 <div align="center">
-	<a href="https://webnamics.github.io/u-dicom-viewer/">Online version</a>
+	<a href="https://mmollaahmadi.github.io/dicom-viewer/">Online version</a>
 </div>
 
 <hr />
