@@ -3,6 +3,7 @@ import {withStyles} from '@material-ui/core/styles'
 import {connect} from 'react-redux'
 import Dicomdir from './components/Dicomdir'
 import DicomViewer from './components/DicomViewer'
+import DicomViewerForList from './components/DicomViewerForList'
 import DicomHeader from './components/DicomHeader'
 import Measurements from './components/Measurements'
 import Settings from './components/Settings'
@@ -29,14 +30,13 @@ import List from '@material-ui/core/List'
 import ListItem from '@material-ui/core/ListItem'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItemText from '@material-ui/core/ListItemText'
-import MenuIcon from '@material-ui/icons/Menu'
-import Popover from '@material-ui/core/Popover'
 import Snackbar from '@material-ui/core/Snackbar'
 import TextField from '@material-ui/core/TextField'
 import Toolbar from '@material-ui/core/Toolbar'
 import Typography from '@material-ui/core/Typography'
 //import { FixedSizeList } from 'react-window'
 //import {List as ListVirtual} from 'react-virtualized'
+
 import {
   isMobile,
   isTablet,
@@ -56,7 +56,7 @@ import {
   filesStore,
 } from './actions/index'
 import {
-  log,
+  //log,
   getPixelSpacing,
   getSpacingBetweenSlice,
   getSliceThickness,
@@ -99,33 +99,39 @@ import {
   mdiRuler,
   mdiSettings,
   mdiToolbox,
-  mdiTools,
+  //mdiTools,
   mdiTrashCanOutline,
   mdiVideo,
   mdiWeb,
 
-  mdiPlay,
-  mdiPause,
-  mdiSkipBackward,
-  mdiSkipForward,
-  mdiSkipNext,
-  mdiSkipPrevious, mdiArrowLeft, mdiArrowLeftCircle, mdiViewList,
+  // mdiPlay,
+  // mdiPause,
+  // mdiSkipBackward,
+  // mdiSkipForward,
+  // mdiSkipNext,
+  // mdiSkipPrevious, 
+  // mdiArrowLeft, 
+  mdiArrowLeftCircle, mdiViewList,
 } from '@mdi/js'
 
 import './App.css'
 import Tooltip from "@material-ui/core/Tooltip";
 import MenuItem from "@material-ui/core/MenuItem";
-import Menu from "@material-ui/core/Menu";
+// import Menu from "@material-ui/core/Menu";
 import Popper from "@material-ui/core/Popper";
 import Grow from "@material-ui/core/Grow";
 import Paper from "@material-ui/core/Paper";
 import ClickAwayListener from "@material-ui/core/ClickAwayListener";
 import MenuList from "@material-ui/core/MenuList";
 import Card from "@material-ui/core/Card";
+import * as cornerstoneWADOImageLoader from "cornerstone-wado-image-loader";
+import * as cornerstone from "cornerstone-core";
+// import * as dicomParser from "dicom-parser";
+import SeriesItem from "./components/SeriesItem";
 
-log();
+// log();
 
-//localStorage.setItem("debug", "cornerstoneTools")
+localStorage.setItem("debug", "cornerstoneTools");
 
 const drawerWidth = 240;
 const iconColor = '#FFFFFF';
@@ -167,9 +173,9 @@ const styles = theme => ({
 
   toolbarCard: {
     zIndex: theme.zIndex.drawer + 1,
-    backgroundColor:'#453479',
-    position:'absolute',
-    margin:'0 25% 0 25%',
+    backgroundColor: '#453479',
+    position: 'absolute',
+    margin: '0 25% 0 25%',
     transition: theme.transitions.create(['width', 'margin'], {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.leavingScreen,
@@ -242,6 +248,10 @@ class App extends PureComponent {
     this.file = null;
     this.url = null;
 
+    this.dicomImage = null;
+    this.imageId = null;
+    this.image = null;
+
     this.mprData = {};
     this.mprPlane = '';
 
@@ -262,8 +272,14 @@ class App extends PureComponent {
     this.dicomViewersRefs = [];
     this.dicomViewers = [];
     for (let i = 0; i < 16; i++) {
-      this.dicomViewers.push(this.setDcmViewer(i))
+      this.dicomViewers.push(this.setDcmViewer(i, 0))
     }
+
+    this.seriesListDicomViewersRefs = [];
+    this.seriesListDicomViewers = [];
+
+    this.seriesCounter = 0;
+    
   }
 
   state = {
@@ -301,19 +317,41 @@ class App extends PureComponent {
     anchorElMpr: null,
     anchorElImageEdit: null,
     visibleSeries: false,
+
+    totalSeries: null,
+    seriesListDicomViewers: [],
+    seriesCounter: 0,
   };
 
-  setDcmViewer = (index) => {
-    return (
-      <DicomViewer
-        dcmRef={(ref) => {
-          this.dicomViewersRefs[index] = ref
-        }}
-        index={index}
-        runTool={ref => (this.runTool = ref)}
-        changeTool={ref => (this.changeTool = ref)}
-      />
-    )
+  setDcmViewer = (index, type) => {
+    if (type === 0) {
+      console.log('griddddddddddddd');
+      return (
+        <DicomViewer
+          dcmRef={(ref) => {
+            this.dicomViewersRefs[index] = ref
+          }}
+          index={index}
+          runTool={ref => (this.runTool = ref)}
+          // runTool2={ref => (this.runTool2 = ref)}
+          changeTool={ref => (this.changeTool = ref)}
+        />
+      )
+    } else if (type === 1) {
+      console.log('listttttttttttt');
+      return (
+        <DicomViewerForList
+          dcmRef={(ref) => {
+            this.seriesListDicomViewersRefs[index] = ref
+          }}
+          index={index}
+          runTool={ref => (this.runTool = ref)}
+          // runTool2={ref => (this.runTool2 = ref)}
+          changeTool={ref => (this.changeTool = ref)}
+          // files={this.state.totalSeries ? this.state.totalSeries[index].files : []}
+        />
+      )
+    }
   };
 
   getDcmViewerRef = (index) => {
@@ -342,7 +380,7 @@ class App extends PureComponent {
   }
 
   handleOpenLocalFs = (filesSelected) => {
-    //console.log('handleOpenLocalFs: ', filesSelected)
+    // console.log('handleOpenLocalFs:+++++++++++++++++ ', filesSelected)
     if (filesSelected.length > 1) {
       this.files = filesSelected;
       this.changeLayout(1, 1);
@@ -364,7 +402,7 @@ class App extends PureComponent {
       })
     } else {
       const file = filesSelected[0];
-      //console.log('file: ', file)
+      console.log('file: ', file);
       if (file.type === 'application/x-zip-compressed' || file.type === 'application/zip') {
         this.file = file;
         this.url = null;
@@ -385,7 +423,7 @@ class App extends PureComponent {
   };
 
   handleOpenImage = (index) => {
-    //console.log('handleOpenImage : ', index)
+    // console.log('handleOpenImage+++++ : ', index)
     const visibleMprOrthogonal = this.state.visibleMprOrthogonal;
     const visibleMprSagittal = this.state.visibleMprSagittal;
     const visibleMprCoronal = this.state.visibleMprCoronal;
@@ -458,11 +496,50 @@ class App extends PureComponent {
     this.openDicomdir.current.click()
   }
 
-  handleOpenFolder(files) {
-    //console.log('handleOpenFolder: ', files)
+  async handleOpenFolder(files) {
+  
+    let seriesNumberList = [];
+    let _totalSeries = [];    
+    let _seriesCounter = 0;
+
     for (let i = 0; i < files.length; i++) {
-      this.files.push(files[i])
+
+      this.files.push(files[i]);
+
+      if (files[i] !== undefined) {
+                                                                                   
+        // extract image and data from file                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+        let imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(files[i]);        
+        let image = await cornerstone.loadImage(imageId).then((image) => {          
+          return image;
+        });
+        let fileImageSeriesNumber = image.data.string('x00200011');
+        
+        // if found new series do:
+        if (!seriesNumberList.includes(fileImageSeriesNumber)) {
+
+            seriesNumberList.push(fileImageSeriesNumber);
+
+            _totalSeries.push({
+              seriesNumber: fileImageSeriesNumber,
+              images: [image,],
+              files: [files[i],]
+            });
+
+            _seriesCounter++;
+          } else {
+            _totalSeries.forEach(ts => {
+              if (ts.seriesNumber === fileImageSeriesNumber) {
+                ts.images.push(image);
+                ts.files.push(files[i]);
+              }
+            });
+          }                  
+      } else {
+        console.log("file is undefinde");
+      }
     }
+
     this.changeLayout(1, 1);
     this.mprPlane = '';
     this.volume = [];
@@ -471,6 +548,9 @@ class App extends PureComponent {
         // this.dicomViewersRefs[i].runTool('clear')
       }
     this.setState({
+      totalSeries: _totalSeries,
+      seriesCounter:_seriesCounter,
+      seriesListDicomViewers: this.seriesListDicomViewers,
       sliceIndex: 0,
       sliceMax: 1,
       visibleMprOrthogonal: false,
@@ -688,10 +768,73 @@ class App extends PureComponent {
     this.openMultipleFilesCompleted()
   };
 
+  openMultipleFilesFromList = (index) => {
+    if (this.props.files !== null) {
+      // this.changeLayout(1, 1);
+
+      this.dicomViewersRefs[this.props.activeDcmIndex].runTool(
+        'openLocalFs', 
+        this.state.totalSeries[index].files[0]
+        );
+
+      // this.seriesListDicomViewers = [];
+      // for (let i = 0; i < this.state.seriesCounter; i++) {      
+      //   this.seriesListDicomViewers.push(this.setDcmViewer(i, 1))
+      // }
+
+      // this.state.totalSeries.forEach((ts, index) => {
+      //   console.log("index: " + index);
+      //   console.log("refs " + this.seriesListDicomViewersRefs.length);
+      //   this.seriesListDicomViewersRefs[index].runTool('openLocalFs', ts.files[0]);
+      // });
+
+      const sliceMax = this.props.files.length;
+      this.setState({sliceMax: sliceMax}, () => {
+        this.mprPlanePosition();
+        if (this.mprPlane === 'sagittal')
+          this.setState({
+            visibleMprOrthogonal: false,
+            visibleMprSagittal: true,
+            visibleMprAxial: false,
+            visibleMprCoronal: false
+          });
+        else if (this.mprPlane === 'coronal')
+          this.setState({
+            visibleMprOrthogonal: false,
+            visibleMprSagittal: false,
+            visibleMprAxial: false,
+            visibleMprCoronal: true
+          });
+        else
+          this.setState({
+            visibleMprOrthogonal: false,
+            visibleMprSagittal: false,
+            visibleMprAxial: true,
+            visibleMprCoronal: false
+          })
+      })
+    }
+  };
+
   openMultipleFilesCompleted = () => {
     if (this.props.files !== null) {
       this.changeLayout(1, 1);
-      this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', 0);
+
+      // if(opt === 1){
+      //   this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', 0);
+      // }
+
+      // this.seriesListDicomViewers = [];
+      // for (let i = 0; i < this.state.seriesCounter; i++) {      
+      //   this.seriesListDicomViewers.push(this.setDcmViewer(i, 1))
+      // }
+
+      // this.state.totalSeries.forEach((ts, index) => {
+      //   console.log("index: " + index);
+      //   console.log("refs " + this.seriesListDicomViewersRefs.length);
+      //   this.seriesListDicomViewersRefs[index].runTool('openLocalFs', ts.files[0]);
+      // });
+
       const sliceMax = this.props.files.length;
       this.setState({sliceMax: sliceMax}, () => {
         this.mprPlanePosition();
@@ -777,21 +920,21 @@ class App extends PureComponent {
   };
 
   handleLayout = (event) => {
-    if(this.state.openLayout){
+    if (this.state.openLayout) {
       this.setState({
         anchorElLayout: null,
-        openLayout:false
+        openLayout: false
       });
-    }else{
+    } else {
       this.setState({
         anchorElLayout: event.currentTarget,
-        openLayout:true
+        openLayout: true
       });
     }
   };
 
   closeLayout = () => {
-    this.setState({anchorElLayout: null, openLayout:false})
+    this.setState({anchorElLayout: null, openLayout: false})
   };
 
   changeLayout = (row, col) => {
@@ -809,6 +952,7 @@ class App extends PureComponent {
         }
       }
     }
+    console.log("change layout end: -----------", this.props.layout[0]);
     this.props.setLayoutStore(row, col)
   };
 
@@ -906,6 +1050,42 @@ class App extends PureComponent {
 
   };
 
+layoutListClick = (index) => {
+    // if (isMobile && index === this.props.activeDcmIndex) return;
+
+    console.log("indexxxxxxxxxx : " + index);
+
+    this.mprSliceIndex[this.props.activeDcmIndex] = this.state.sliceIndex;
+
+    this.files = this.state.totalSeries[index].files;
+    this.openMultipleFilesFromList(index);
+    // this.props.setActiveDcmIndex(index);
+
+    // if (this.state.visibleMprOrthogonal) {
+    //   if (index === 0) {
+    //     const sliceMax = this.props.files === null ? 1 : this.props.files.length;
+    //     this.setState({sliceMax: sliceMax, sliceIndex: this.mprSliceIndex[0]})
+
+    //   } else if (index === 1) {
+    //     const sliceMax = this.props.files[0].image.columns;
+    //     this.setState({sliceMax: sliceMax, sliceIndex: this.mprSliceIndex[1]})
+
+    //   } else if (index === 2) {
+    //     const sliceMax = this.props.files[0].image.rows;
+    //     this.setState({sliceMax: sliceMax, sliceIndex: this.mprSliceIndex[2]})
+    //   }
+    // }
+
+    // const dcmViewer = this.getDcmViewerRef(index);
+    // //console.log('dcmViewer:', dcmViewer)
+    // this.props.setActiveMeasurements(dcmViewer.measurements);
+    // this.props.setActiveDcm({
+    //   image: dcmViewer.image,
+    //   element: dcmViewer.dicomImage,
+    //   isDicom: dcmViewer.isDicom
+    // })
+  };
+
   layoutGridClick = (index) => {
     if (isMobile && index === this.props.activeDcmIndex) return;
 
@@ -931,7 +1111,11 @@ class App extends PureComponent {
     const dcmViewer = this.getDcmViewerRef(index);
     //console.log('dcmViewer:', dcmViewer)
     this.props.setActiveMeasurements(dcmViewer.measurements);
-    this.props.setActiveDcm({image: dcmViewer.image, element: dcmViewer.dicomImage, isDicom: dcmViewer.isDicom})
+    this.props.setActiveDcm({
+      image: dcmViewer.image,
+      element: dcmViewer.dicomImage,
+      isDicom: dcmViewer.isDicom
+    })
   };
 
   layoutGridTouch = (index) => {
@@ -998,14 +1182,64 @@ class App extends PureComponent {
     )
   };
 
+  buildLayoutList = () => {
+    let dicomviewers = [];    
+    for (let i = 0; i < this.state.seriesCounter; i++) {
+      const styleLayoutGrid = {
+        border: 'solid 1px #fff',
+        width: '100%',
+        height: '100px',
+        marginTop: '5px',
+      };
+
+      // this.seriesListDicomViewers[i].runTool2(i, this.state.totalSeries[i].images[0]);
+
+      dicomviewers.push(
+        <ListItem button onClick={() => this.layoutListClick(i)}>
+          <row style={{width: '100%'}}>
+            {/*< div
+              key={i}
+              style={styleLayoutGrid}
+              // onClick={() => this.layoutListClick(i)}
+              // onTouchStart={() => this.layoutGridTouch(i)}
+            >
+              {this.seriesListDicomViewers[i]}
+            </div>*/}
+            <SeriesItem image={this.state.totalSeries[i] ? this.state.totalSeries[i].images[0] : null} />
+            <p
+              style={{padding: 0, margin: '5px 10px 5px 10px'}}
+            >
+              series number: {this.state.totalSeries[i] ? this.state.totalSeries[i].seriesNumber : "{ts.seriesNumber}"}
+            </p>
+          </row>
+        </ListItem>
+      );
+    }
+
+    return (
+      <div
+        id="dicomviewer-grid1"
+        style={{
+          display: 'grid',
+          // gridTemplateRows: `repeat(${this.props.layout[0]}, ${100 / this.props.layout[0]}%)`,
+          // gridTemplateColumns: `repeat(${this.props.layout[1]}, ${100 / this.props.layout[1]}%)`,
+          height: '100%',
+          width: '100%',
+        }}
+      >
+        {dicomviewers}
+      </div>
+    );
+  };
+
   getFileName = (dcmViewer) => {
     return dcmViewer.filename
     /*if (dcmViewer.fsItem !== null) {
-      return dcmViewer.fsItem.name
+    return dcmViewer.fsItem.name
     } else if (dcmViewer.localfile !== null) {
-      return getFileNameCorrect(dcmViewer.localfile.name)
+    return getFileNameCorrect(dcmViewer.localfile.name)
     } else {
-      return dcmViewer.localurl.substring(dcmViewer.localurl.lastIndexOf('/')+1)
+    return dcmViewer.localurl.substring(dcmViewer.localurl.lastIndexOf('/')+1)
     }*/
   };
 
@@ -1152,7 +1386,7 @@ class App extends PureComponent {
           // return r.sliceDistance - l.sliceDistance
           return l.instanceNumber - r.instanceNumber
         })
-        //console.log('order: ', order)     
+        //console.log('order: ', order)
       } else {
         // const reorder = files[0].sliceDistance < files[1].sliceDistance
         const reorder = files[0].sliceLocation < files[1].sliceLocation;
@@ -1162,15 +1396,15 @@ class App extends PureComponent {
             // return r.sliceDistance - l.sliceDistance
             return r.sliceLocation - l.sliceLocation
           })
-          //console.log('reorder: ')     
+          //console.log('reorder: ')
         }
       }
       /*if (this.getImageOrientationZ(files[0].image) < 0) {
-        order.sort((l, r) => {
-          return r.instanceNumber - l.instanceNumber
-          // return r.sliceDistance - l.sliceDistance
-        })     
-        console.log('reorder 2: ')        
+      order.sort((l, r) => {
+      return r.instanceNumber - l.instanceNumber
+      // return r.sliceDistance - l.sliceDistance
+      })
+      console.log('reorder 2: ')
       }*/
 
       let intervals = [0];
@@ -1217,7 +1451,7 @@ class App extends PureComponent {
               // simple linear interpolation
               // const p0 = this.volume[intervals[i]][k]
               // const p1 = this.volume[intervals[i+1]][k]
-              // p[k] = (p0+p1)/2   
+              // p[k] = (p0+p1)/2
 
               // weighted linear interpolation
               const p0 = this.volume[intervals[i]][k] * (1 - w);
@@ -1228,17 +1462,17 @@ class App extends PureComponent {
               }
               // weighted bilinear interpolation
               /*if (k-1 > 0 && k+1 < length) {
-                const p0 = this.volume[intervals[i]][k] * (1-w) * 0.5 + this.volume[intervals[i]][k-1] * (1-w) * 0.25 + this.volume[intervals[i]][k+1] * (1-w) * 0.25
-                const p1 = this.volume[intervals[i+1]][k] * w * 0.5 + this.volume[intervals[i+1]][k-1] * w * 0.25 + this.volume[intervals[i+1]][k+1] * w * 0.25
-                p[k] = p0+p1
+              const p0 = this.volume[intervals[i]][k] * (1-w) * 0.5 + this.volume[intervals[i]][k-1] * (1-w) * 0.25 + this.volume[intervals[i]][k+1] * (1-w) * 0.25
+              const p1 = this.volume[intervals[i+1]][k] * w * 0.5 + this.volume[intervals[i+1]][k-1] * w * 0.25 + this.volume[intervals[i+1]][k+1] * w * 0.25
+              p[k] = p0+p1
               } else if (k-1 < 0) {
-                const p0 = this.volume[intervals[i]][k] * (1-w) * 0.75 + this.volume[intervals[i]][k+1] * (1-w) * 0.25
-                const p1 = this.volume[intervals[i+1]][k] * w * 0.5 + this.volume[intervals[i+1]][k+1] * w * 0.25
-                p[k] = p0+p1
-              } else { // k+1 > length 
-                const p0 = this.volume[intervals[i]][k] * (1-w) * 0.75 + this.volume[intervals[i]][k-1] * (1-w) * 0.25
-                const p1 = this.volume[intervals[i+1]][k] * w * 0.5 + this.volume[intervals[i+1]][k-1] * w * 0.25
-                p[k] = p0+p1
+              const p0 = this.volume[intervals[i]][k] * (1-w) * 0.75 + this.volume[intervals[i]][k+1] * (1-w) * 0.25
+              const p1 = this.volume[intervals[i+1]][k] * w * 0.5 + this.volume[intervals[i+1]][k+1] * w * 0.25
+              p[k] = p0+p1
+              } else { // k+1 > length
+              const p0 = this.volume[intervals[i]][k] * (1-w) * 0.75 + this.volume[intervals[i]][k-1] * (1-w) * 0.25
+              const p1 = this.volume[intervals[i+1]][k] * w * 0.5 + this.volume[intervals[i+1]][k-1] * w * 0.25
+              p[k] = p0+p1
               }*/
             }
 
@@ -1551,6 +1785,10 @@ class App extends PureComponent {
     })
   };
 
+  dicomImageRef = el => {
+    this.dicomImage = el
+  };
+
   render() {
     //console.log('App render: ')
 
@@ -1565,9 +1803,9 @@ class App extends PureComponent {
 
     const openMenu = this.state.openMenu;
     const openImageEdit = this.state.openImageEdit;
-    const openTools = this.state.openTools;
+    // const openTools = this.state.openTools;
     const openMpr = this.state.openMpr && isMultipleFiles && this.mprPlane !== '';
-    const visibleMainMenu = this.state.visibleMainMenu;
+    // const visibleMainMenu = this.state.visibleMainMenu;
     const visibleHeader = this.state.visibleHeader;
     const visibleSettings = this.state.visibleSettings;
     const visibleAbout = this.state.visibleAbout;
@@ -1579,7 +1817,7 @@ class App extends PureComponent {
     const visibleZippedFileDlg = this.state.visibleZippedFileDlg;
     const visibleDownloadZipDlg = this.state.visibleDownloadZipDlg;
     const visibleOpenMultipleFilesDlg = this.state.visibleOpenMultipleFilesDlg;
-    const visibleLayout = Boolean(this.state.anchorElLayout);
+    // const visibleLayout = Boolean(this.state.anchorElLayout);
     const visibleVolumeBuilding = this.state.visibleVolumeBuilding;
     const visibleMprOrthogonal = this.state.visibleMprOrthogonal;
     const visibleMprCoronal = this.state.visibleMprCoronal;
@@ -1597,19 +1835,20 @@ class App extends PureComponent {
     const anchorElImageEdit = this.state.anchorElImageEdit;
     const visibleSeries = this.state.visibleSeries;
     const anchorElLayout = this.state.anchorElLayout;
-    const openLayout = this.state.openLayout;
+    // const openLayout = this.state.openLayout;
 
+    let totalSeries = this.state.totalSeries;
 
     //console.log('this.dicomViewersRefs: ', this.dicomViewersRefs)
-    //console.log('isMultipleFiles: ', isMultipleFiles)    
-    //console.log('this.mprPlane: ', this.mprPlane) 
+    //console.log('isMultipleFiles: ', isMultipleFiles)
+    //console.log('this.mprPlane: ', this.mprPlane)
 
     const handleClick = (event) => {
-      this.setState({anchorElLayout:event.currentTarget});
+      this.setState({anchorElLayout: event.currentTarget});
     };
 
     const handleClose = () => {
-      this.setState({anchorElLayout:null});
+      this.setState({anchorElLayout: null});
     };
 
     return (
@@ -1627,7 +1866,7 @@ class App extends PureComponent {
 
             <Divider
               orientation={"vertical"}
-              style={{display: 'list-item', backgroundColor:'#fff'}}
+              style={{display: 'list-item', backgroundColor: '#fff'}}
               flexItem
             />
 
@@ -1652,7 +1891,7 @@ class App extends PureComponent {
               role={undefined}
               transition
               disablePortal
-              style={{backgroundColor:'#6c5c89'}}
+              style={{backgroundColor: '#6c5c89'}}
               placement={'center-top'}
             >
               {({TransitionProps, placement}) => (
@@ -1661,12 +1900,12 @@ class App extends PureComponent {
                   style={{transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom'}}
                 >
                   <Paper
-                    style={{backgroundColor:'#6c5c89', borderRadius:'0 0 4px 4px'}}
+                    style={{backgroundColor: '#6c5c89', borderRadius: '0 0 4px 4px'}}
                   >
                     <ClickAwayListener onClickAway={(event) => this.toggleOpenMenu(event)}>
                       <MenuList
                         autoFocusItem={openMenu}
-                        style={{padding:'0'}}
+                        style={{padding: '0'}}
                         id="menu-list-grow"
                         onKeyDown={(event) => this.toggleOpenMenu(event)}
                       >
@@ -1748,7 +1987,7 @@ class App extends PureComponent {
               role={undefined}
               transition
               disablePortal
-              style={{backgroundColor:'#6c5c89', marginTop:'3px'}}
+              style={{backgroundColor: '#6c5c89', marginTop: '3px'}}
               placement={'center-top'}
             >
               {({TransitionProps, placement}) => (
@@ -1758,16 +1997,16 @@ class App extends PureComponent {
                 >
                   <Paper
                     style={{
-                      backgroundColor:'#6c5c89',
-                      borderRadius:'0 0 4px 4px',
+                      backgroundColor: '#6c5c89',
+                      borderRadius: '0 0 4px 4px',
                     }}
                   >
                     <ClickAwayListener onClickAway={handleClose}>
-                        <LayoutTool
-                          row={this.props.layout[0] - 1}
-                          col={this.props.layout[1] - 1}
-                          onChange={this.changeLayout}
-                        />
+                      <LayoutTool
+                        row={this.props.layout[0] - 1}
+                        col={this.props.layout[1] - 1}
+                        onChange={this.changeLayout}
+                      />
                     </ClickAwayListener>
                   </Paper>
                 </Grow>
@@ -1886,15 +2125,15 @@ class App extends PureComponent {
                             <ListItemIcon style={{marginLeft: '-10px'}}>
                               <Icon
                                 path={mdiCheck}
-                                    size={'1.0rem'}
-                                                                              color={iconColor}/></ListItemIcon> : null}
+                                size={'1.0rem'}
+                                color={iconColor}/></ListItemIcon> : null}
                           <ListItemText
                             style={visibleMprOrthogonal ? {marginLeft: '-7px'} : {marginLeft: '40px'}}
                             classes={primaryClass}
                             primary={
                               <Typography
                                 type="body1"
-                                          style={{fontSize: '0.80em', marginLeft: '-23px'}}>Orthogonal</Typography>
+                                style={{fontSize: '0.80em', marginLeft: '-23px'}}>Orthogonal</Typography>
                             }/>
                         </MenuItem>
                         <MenuItem button style={{paddingLeft: 40}} onClick={() => this.mprCoronal()}>
@@ -1907,7 +2146,7 @@ class App extends PureComponent {
                             primary={
                               <Typography
                                 type="body1"
-                                          style={{fontSize: '0.80em', marginLeft: '-23px'}}>Coronal</Typography>
+                                style={{fontSize: '0.80em', marginLeft: '-23px'}}>Coronal</Typography>
                             }/>
                         </MenuItem>
                         <MenuItem button style={{paddingLeft: 40}} onClick={() => this.mprSagittal()}>
@@ -1940,8 +2179,6 @@ class App extends PureComponent {
                 </Grow>
               )}
             </Popper>
-
-
 
 
             <Tooltip title={"Edit"} placement={"top"} arrow>
@@ -1977,7 +2214,7 @@ class App extends PureComponent {
               anchorEl={anchorElImageEdit}
               role={undefined}
               transition
-              style={{backgroundColor:'#6C5C89'}}
+              style={{backgroundColor: '#6C5C89'}}
               placement={"top"}
             >
               {({TransitionProps, placement}) => (
@@ -1985,9 +2222,9 @@ class App extends PureComponent {
                   {...TransitionProps}
                   style={{transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom'}}
                 >
-                  <Paper style={{backgroundColor:'#6C5C89'}}>
+                  <Paper style={{backgroundColor: '#6C5C89'}}>
                     <ClickAwayListener onClickAway={(event) => this.toggleImageEdit(event)}>
-                      <MenuList dense={true} component="div" style={{padding:'0'}}>
+                      <MenuList dense={true} component="div" style={{padding: '0'}}>
                         <MenuItem button onClick={() => this.toolExecute('Invert')}>
                           <ListItemIcon><Icon path={mdiInvertColors} size={iconSize} color={iconColor}/></ListItemIcon>
                           <ListItemText classes={primaryClass} primary="Invert"/>
@@ -1999,7 +2236,7 @@ class App extends PureComponent {
               )}
             </Popper>
 
-            <Divider orientation="vertical" style={{display: 'list-item', backgroundColor:'#fff'}}/>
+            <Divider orientation="vertical" style={{display: 'list-item', backgroundColor: '#fff'}}/>
 
             <Tooltip title={"No tool"} placement={"top"} arrow>
               <IconButton button onClick={() => this.toolExecute('notool')}
@@ -2071,7 +2308,6 @@ class App extends PureComponent {
           </Toolbar>
         </Card>
 
-
         <Drawer
           variant="persistent"
           open={visibleSeries}
@@ -2080,12 +2316,15 @@ class App extends PureComponent {
         >
           <div className={classes.toolbar} style={{marginTop: '48px'}}>
             <List dense={true}>
-              <ListItem button onClick={() => this.showAppBar()}>
+              <ListItem button onClick={() => this.toggleSeriesMenu()}>
                 <ListItemIcon><Icon path={mdiArrowLeftCircle} size={iconSize} color={iconColor}/></ListItemIcon>
                 <ListItemText classes={primaryClass} primary='Hide Series'/>
               </ListItem>
               <Divider/>
 
+              {/*<SeriesList series={totalSeries}/>*/}
+              {/*} {totalSeries ? totalSeriesView : (<p style={{padding: 0, textAlign: 'center'}}>nothing</p>)}*/}
+              {this.buildLayoutList()}
             </List>
           </div>
         </Drawer>

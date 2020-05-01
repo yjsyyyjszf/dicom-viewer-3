@@ -8,6 +8,6 @@ const HeaderItem = ({name, value}) => {
             <ListItemText primary={name} secondary={value} />
         </ListItem>  
     )
-}
+};
   
 export default HeaderItem

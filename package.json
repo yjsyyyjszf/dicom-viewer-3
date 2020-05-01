@@ -20,7 +20,7 @@
     "cornerstone-web-image-loader": "^2.1.1",
     "daikon": "^1.2.42",
     "dexie": "^2.0.4",
-    "dicom-parser": "^1.8.4",
+    "dicom-parser": "^1.8.5",
     "file-saver": "^2.0.2",
     "gh-pages": "^2.2.0",
     "hammerjs": "^2.0.8",
