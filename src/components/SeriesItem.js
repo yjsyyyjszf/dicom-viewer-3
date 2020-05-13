@@ -1,5 +1,5 @@
 import React from 'react'
-import ListItem from "@material-ui/core/ListItem";
+// import ListItem from "@material-ui/core/ListItem";
 import * as cornerstone from "cornerstone-core"
 
 export default class SeriesItem extends React.Component{
@@ -21,8 +21,8 @@ export default class SeriesItem extends React.Component{
   }
   render() {
     const styleDicomImage = {
-        width: '100%', 
-        height: '100%', 
+        width: 'inherit',
+        height: '100%',
         position: 'relative',
       };
 

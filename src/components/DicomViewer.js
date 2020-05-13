@@ -26,12 +26,12 @@ import { import as csTools } from 'cornerstone-tools'
 import db from '../db/db'
 import fs from '../fs/fs'
 import {
-  clearStore, 
-  dcmIsOpen, 
-  activeDcm, 
-  dcmTool, 
+  clearStore,
+  dcmIsOpen,
+  activeDcm,
+  dcmTool,
   activeMeasurements,
-  doFsRefresh} 
+  doFsRefresh}
 from '../actions'
 import {
   capitalize,
@@ -133,8 +133,8 @@ class DicomViewer extends React.Component {
       this.props.changeTool(this);
       cornerstone.events.addEventListener('cornerstoneimageloaded', this.onImageLoaded);
       const { dcmRef } = this.props;
-      dcmRef(this)          
-      
+      dcmRef(this)
+
     }
 
     componentWillUnmount() {
@@ -142,7 +142,7 @@ class DicomViewer extends React.Component {
       // this.props.runTool2(undefined);
       this.props.changeTool(undefined);
       const { dcmRef } = this.props;
-      dcmRef(undefined)            
+      dcmRef(undefined)
     }
 
     componentDidUpdate(previousProps) {
@@ -160,7 +160,7 @@ class DicomViewer extends React.Component {
         cornerstone.resize(this.dicomImage)
       }
     }
-  
+
     onOpenUrl = (e) => {
       const eventData = e.detail;
       this.setState({ progress: eventData.percentComplete })
@@ -172,13 +172,13 @@ class DicomViewer extends React.Component {
         this.loadImage(undefined, url)
       })
     };
-  
+
     hideOpenUrlDlg = () => {
       this.setState({ visibleOpenUrlDlg: false, progress: null })
     };
 
     measurementSave = (measure) => {
-      this.measurements.push(measure) 
+      this.measurements.push(measure)
     };
 
     measurementClear = () => {
@@ -216,7 +216,7 @@ class DicomViewer extends React.Component {
       if (value === undefined) return;
       return value + (value === 0 ? ' (pixel)' : ' (plane)')
     };
-   
+
     onImageLoaded = (e) => {
       //console.log('cornerstoneimageloaded: ')
     };
@@ -276,7 +276,7 @@ class DicomViewer extends React.Component {
         ).textContent = `A`;
         document.getElementById(
           `mrrightcenter-${this.props.index}`
-        ).textContent = `P`  
+        ).textContent = `P`
 
       } else if (this.mprPlane === 'axial') {
         document.getElementById(
@@ -290,7 +290,7 @@ class DicomViewer extends React.Component {
         ).textContent = `R`;
         document.getElementById(
           `mrrightcenter-${this.props.index}`
-        ).textContent = `L`    
+        ).textContent = `L`
 
       } else if (this.mprPlane === 'coronal') {
         document.getElementById(
@@ -304,8 +304,8 @@ class DicomViewer extends React.Component {
         ).textContent = `R`;
         document.getElementById(
           `mrrightcenter-${this.props.index}`
-        ).textContent = `L`                    
-      }    
+        ).textContent = `L`
+      }
 
       if (this.isDicom && this.state.visibleCinePlayer && this.numberOfFrames > 1) {
         document.getElementById(
@@ -320,7 +320,7 @@ class DicomViewer extends React.Component {
 
     onMeasurementModified = (e) => {
       //console.log('cornerstonetoolsmeasurementmodified: ', e.detail.measurementData)
-      
+
     };
 
     onMeasurementAdded = (e) => {
@@ -332,7 +332,7 @@ class DicomViewer extends React.Component {
         data: e.detail.measurementData
       };
       this.measurementSave(measure);
-      this.props.setActiveMeasurements(this.measurements)      
+      this.props.setActiveMeasurements(this.measurements)
     };
 
     onMeasurementCompleted = (e) => {
@@ -352,7 +352,7 @@ class DicomViewer extends React.Component {
         this.props.setActiveMeasurements(this.measurements)
       }
     };
-    
+
     onErrorOpenImageClose = () => {
       this.setState({errorOnOpenImage: null})
     };
@@ -397,13 +397,162 @@ class DicomViewer extends React.Component {
       cornerstone.enable(element);
       cornerstone.displayImage(element, image);
     }
+    displayImageFromFilesMohammad = (_files) => {
+      // console.log('displayImageFromFiles: ', index);
+      // console.log('files: ', this.props.files);
+
+
+      // const files = this.files === null ? this.props.files : this.files
+      let files = _files;
+
+      // console.log('displayImageFromFiles - this.files: ', this.files)
+
+      // MOHAMMAD
+      let imageIds = [];
+      for(let i=0; i< files.length; i++){
+        // imageIds.push(files[i].imageId);
+        imageIds.push(cornerstoneWADOImageLoader.wadouri.fileManager.add(files[i]));
+        console.log('file -- ' ,files[i]);
+        console.log('files image id-- ' ,cornerstoneWADOImageLoader.wadouri.fileManager.add(files[i]));
+      }
+      let stack = {
+        currentImageIdIndex: 0,
+        imageIds
+      }
+
+
+
+
+
+      // const image = this.props.files[index].image;
+      // const imageId = this.props.files[index].imageId;
+      // this.filename = this.props.files[index].name;
+
+      // let image = files[0].image;
+      // let imageId = files[0].imageId;
+      this.filename = files[0].name;
+
+      let element = this.dicomImage;
+      element.addEventListener("cornerstonenewimage", this.onNewImage);
+      element.addEventListener("cornerstoneimagerendered", this.onImageRendered);
+      element.addEventListener("cornerstonetoolsmeasurementadded", this.onMeasurementAdded);
+      element.addEventListener("cornerstonetoolsmeasurementmodified", this.onMeasurementModified);
+      element.addEventListener("cornerstonetoolsmeasurementcompleted", this.onMeasurementCompleted);
+      cornerstone.enable(element);
+
+      // this.image = image;
+
+      // this.isDicom = true;
+
+      // this.PatientsName = image.data.string('x00100010');
+      // this.sopInstanceUid = this.getSopInstanceUID();
+
+      // let stack = { currentImageIdIndex: 0, imageIds: "" };
+      // this.numberOfFrames = image.data.intString('x00280008');
+      // if (this.numberOfFrames > 0) {
+      //   let imageIds = [];
+      //   for(var i=0; i < this.numberOfFrames; ++i) {
+      //     imageIds.push(imageId + "?frame="+i)
+      //   }
+      //   stack.imageIds = imageIds
+      // }
+
+
+
+
+      // MOHAMMAD
+      // Add our tool, and set it's mode
+      const StackScrollMouseWheelTool = cornerstoneTools.StackScrollMouseWheelTool
+      cornerstone.loadImage(imageIds[0]).then((image) => {
+        this.image = image
+        this.isDicom = true
+
+        cornerstone.displayImage(element, image)
+        this.mprPlanePosition()
+        cornerstoneTools.addStackStateManager(element, ['stack'])
+        cornerstoneTools.addToolState(element, 'stack', stack)
+      })
+      cornerstoneTools.addTool(StackScrollMouseWheelTool)
+      cornerstoneTools.setToolActive('StackScrollMouseWheel', { })
+
+
+
+
+
+      // cornerstone.displayImage(element, image);
+
+      // let viewport = cornerstone.getViewport(this.dicomImage)
+      // let lut =  cornerstone.generateLut(this.image, viewport.voi.windowWidth, viewport.voi.windowCenter, viewport.invert, viewport.modalityLUT, viewport.voiLUT)
+      // this.props.setLutStore(lut)
+      // this.mprPlanePosition();
+
+
+
+      this.props.setActiveDcm({image: this.image, element: this.dicomImage, isDicom: this.isDicom});
+      // this.props.isOpenStore(true);
+      this.props.setIsOpenStore({index: this.props.index, value: true})
+
+
+
+      this.enableTool();
+
+      // if (this.numberOfFrames > 1) {
+      //   cornerstoneTools.addStackStateManager(element, ['stack', 'playClip']);
+      //   cornerstoneTools.addToolState(element, 'stack', stack);
+      //   this.setState({frame: 1})
+      // }
+
+      // Load the possible measurements from DB and save in the store
+      // db.measurement.where('sopinstanceuid').equals(this.sopInstanceUid).each(measure => {
+      //   console.log('load measure from db: ', measure);
+      //   this.measurementSave(measure);
+      //   cornerstoneTools.addToolState(element, measure.tool, measure.data);
+      //   this.runTool(measure.tool);
+      //   cornerstone.updateImage(element);
+      //   cornerstoneTools.setToolEnabled(measure.tool)
+      // }).then(() => {
+      //   this.props.setActiveMeasurements(this.measurements);
+      //   this.props.setActiveDcm({image: this.image, element: this.dicomImage, isDicom: this.isDicom});
+      //   this.props.setIsOpenStore({index: this.props.index, value: true})
+      // })
+
+      //this.overlayImage()
+
+    };
     displayImageFromFiles = (index) => {
       // console.log('displayImageFromFiles: ', index);
       // console.log('files: ', this.props.files);
 
+
+      const files = this.files === null ? this.props.files : this.files
+      // let files = _files;
+
+      // console.log('displayImageFromFiles - this.files: ', this.files)
+
+      // MOHAMMAD
+      let imageIds = [];
+      for(let i=0; i< files.length; i++){
+        imageIds.push(files[i].imageId);
+        // imageIds.push(cornerstoneWADOImageLoader.wadouri.fileManager.add(files[i]));
+        // console.log('file -- ' ,files[i]);
+        // console.log('files image id-- ' ,cornerstoneWADOImageLoader.wadouri.fileManager.add(files[i]));
+      }
+      let stack = {
+        currentImageIdIndex: 0,
+        imageIds
+      }
+
+
+
+
+
       const image = this.props.files[index].image;
-      const imageId = this.props.files[index].imageId;
+      // const imageId = this.props.files[index].imageId;
       this.filename = this.props.files[index].name;
+
+      // const image = files[0].image;
+      // const imageId = files[0].imageId;
+      // this.filename = files[0].name;
 
       const element = this.dicomImage;
       element.addEventListener("cornerstonenewimage", this.onNewImage);
@@ -416,36 +565,54 @@ class DicomViewer extends React.Component {
       this.image = image;
 
       this.isDicom = true;
-      
+
       this.PatientsName = image.data.string('x00100010');
       this.sopInstanceUid = this.getSopInstanceUID();
 
-      let stack = { currentImageIdIndex: 0, imageIds: "" };
-      this.numberOfFrames = image.data.intString('x00280008');
-      if (this.numberOfFrames > 0) {
-        let imageIds = [];
-        for(var i=0; i < this.numberOfFrames; ++i) {
-          imageIds.push(imageId + "?frame="+i)
-        }	
-        stack.imageIds = imageIds
-      }
+      // let stack = { currentImageIdIndex: 0, imageIds: "" };
+      // this.numberOfFrames = image.data.intString('x00280008');
+      // if (this.numberOfFrames > 0) {
+      //   let imageIds = [];
+      //   for(var i=0; i < this.numberOfFrames; ++i) {
+      //     imageIds.push(imageId + "?frame="+i)
+      //   }
+      //   stack.imageIds = imageIds
+      // }
 
-      cornerstone.displayImage(element, image);
+
+
+
+      // MOHAMMAD
+      // Add our tool, and set it's mode
+      const StackScrollMouseWheelTool = cornerstoneTools.StackScrollMouseWheelTool
+      cornerstone.loadImage(imageIds[0]).then((image) => {
+        cornerstone.displayImage(element, image)
+        cornerstoneTools.addStackStateManager(element, ['stack'])
+        cornerstoneTools.addToolState(element, 'stack', stack)
+      })
+      cornerstoneTools.addTool(StackScrollMouseWheelTool)
+      cornerstoneTools.setToolActive('StackScrollMouseWheel', { })
+
+
+
+
+
+      // cornerstone.displayImage(element, image);
 
       /*const viewport = cornerstone.getViewport(this.dicomImage)
       const lut =  cornerstone.generateLut(this.image, viewport.voi.windowWidth, viewport.voi.windowCenter, viewport.invert, viewport.modalityLUT, viewport.voiLUT)
       this.props.setLutStore(lut)*/
-      this.mprPlanePosition();
-      
+      // this.mprPlanePosition();
+
       this.enableTool();
 
-      if (this.numberOfFrames > 1) {
-        cornerstoneTools.addStackStateManager(element, ['stack', 'playClip']);    
-        cornerstoneTools.addToolState(element, 'stack', stack);
-        this.setState({frame: 1})
-      }
+      // if (this.numberOfFrames > 1) {
+      //   cornerstoneTools.addStackStateManager(element, ['stack', 'playClip']);
+      //   cornerstoneTools.addToolState(element, 'stack', stack);
+      //   this.setState({frame: 1})
+      // }
 
-      // Load the possible measurements from DB and save in the store 
+      // Load the possible measurements from DB and save in the store
       db.measurement.where('sopinstanceuid').equals(this.sopInstanceUid).each(measure => {
         console.log('load measure from db: ', measure);
         this.measurementSave(measure);
@@ -456,11 +623,11 @@ class DicomViewer extends React.Component {
       }).then(() => {
         this.props.setActiveMeasurements(this.measurements);
         this.props.setActiveDcm({image: this.image, element: this.dicomImage, isDicom: this.isDicom});
-        this.props.setIsOpenStore({index: this.props.index, value: true})        
-      })   
-      
+        this.props.setIsOpenStore({index: this.props.index, value: true})
+      })
+
       //this.overlayImage()
-      
+
     };
 
     loadImageFromCanvas = (canvas) => {
@@ -514,7 +681,7 @@ class DicomViewer extends React.Component {
       element.addEventListener("cornerstonetoolsmeasurementmodified", this.onMeasurementModified);
       element.addEventListener("cornerstonetoolsmeasurementcompleted", this.onMeasurementCompleted);
       cornerstone.enable(element);
-      
+
       let customObj = {
         rows: rows,
         columns: columns,
@@ -549,7 +716,7 @@ class DicomViewer extends React.Component {
       console.log('loadImage, url: ', url);
 
       if (localfile === undefined && url === undefined && fsItem === undefined) return;
-      
+
       if (fsItem !== undefined) {
         this.fsItem = fsItem
       } else if (localfile !== undefined) {
@@ -557,7 +724,7 @@ class DicomViewer extends React.Component {
       } else {
         this.localurl = url
       }
- 
+
       const element = this.dicomImage;
 
       element.addEventListener("cornerstonenewimage", this.onNewImage);
@@ -584,7 +751,7 @@ class DicomViewer extends React.Component {
           this.isDicom = false;
 
           cornerstone.displayImage(element, image);
-          
+
           this.enableTool();
 
           this.props.setActiveDcm({image: this.image, element: this.dicomImage, isDicom: this.isDicom});
@@ -595,7 +762,7 @@ class DicomViewer extends React.Component {
           this.setState({errorOnOpenImage: "This is not a valid JPG or PNG file."})
         })
 
-      } else if ((localfile !== undefined && isFileImage(localfile)) || (fsItem !== undefined && isFsFileImage(fsItem))) { // otherwise try to open as local image file (JPEG, PNG) 
+      } else if ((localfile !== undefined && isFileImage(localfile)) || (fsItem !== undefined && isFsFileImage(fsItem))) { // otherwise try to open as local image file (JPEG, PNG)
         if (fsItem !== undefined) {
           imageId = cornerstoneFileImageLoader.fileManager.addBuffer(fsItem.data)
         } else {
@@ -609,7 +776,7 @@ class DicomViewer extends React.Component {
           this.PatientsName = '';
           // console.log("image data:" + image.data);
           cornerstone.displayImage(element, image);
-          
+
           this.enableTool();
 
           this.props.setActiveDcm({image: this.image, element: this.dicomImage, isDicom: this.isDicom});
@@ -634,7 +801,7 @@ class DicomViewer extends React.Component {
         } else { // it's a web dicom image
           imageId = "wadouri:"+url
         }
-  
+
         // console.log('loadImage, imageId: ', imageId);
 
         cornerstone.loadAndCacheImage(imageId).then(image => {
@@ -653,7 +820,7 @@ class DicomViewer extends React.Component {
           let dataSet = dicomParser.parseDicom(image.data.byteArray);
           console.log('image dataset -----: ' + dataSet.string('x00200011'));
           console.log('Series Number: ' + image.data.string('x00200011'));
-          
+
 
           this.PatientsName = image.data.string('x00100010');
           console.log('PatientsName: ' + this.PatientsName);
@@ -665,7 +832,7 @@ class DicomViewer extends React.Component {
             let imageIds = [];
             for(var i=0; i < this.numberOfFrames; ++i) {
               imageIds.push(imageId + "?frame="+i)
-            }	
+            }
             stack.imageIds = imageIds
           }
 
@@ -680,13 +847,13 @@ class DicomViewer extends React.Component {
           console.log('lut: ', lut)*/
 
           if (this.numberOfFrames > 1) {
-            cornerstoneTools.addStackStateManager(element, ['stack', 'playClip']);    
+            cornerstoneTools.addStackStateManager(element, ['stack', 'playClip']);
             cornerstoneTools.addToolState(element, 'stack', stack);
             //cornerstoneTools.setToolActive('StackScrollMouseWheel', { })
             this.setState({frame: 1})
           }
-  
-          // Load the possible measurements from DB and save in the store 
+
+          // Load the possible measurements from DB and save in the store
           db.measurement.where('sopinstanceuid').equals(this.sopInstanceUid).each(measure => {
             console.log('load measure from db: ', measure);
             //this.props.measurementStore(measure)
@@ -699,7 +866,7 @@ class DicomViewer extends React.Component {
             //console.log('this.measurements: ', this.measurements)
             this.props.setActiveMeasurements(this.measurements);
             this.props.setActiveDcm({name: this.filename, size: size, image: this.image, element: this.dicomImage, isDicom: this.isDicom});
-            this.props.setIsOpenStore({index: this.props.index, value: true})            
+            this.props.setIsOpenStore({index: this.props.index, value: true})
           });
 
 
@@ -716,12 +883,12 @@ class DicomViewer extends React.Component {
             this.setState({errorOnCors: true})
           } else {
             const pos = error.indexOf(":");
-            this.setState({errorOnOpenImage: pos < 0 ? e.error : error.substring(pos+1)})            
-          } 
+            this.setState({errorOnOpenImage: pos < 0 ? e.error : error.substring(pos+1)})
+          }
         })
       }
     };
-  
+
     enableTool = (toolName, mouseButtonNumber) => {
       // Enable all tools we want to use with this element
       const WwwcTool = cornerstoneTools.WwwcTool;
@@ -748,9 +915,9 @@ class DicomViewer extends React.Component {
       cornerstoneTools.addTool(EllipticalRoiTool);
       cornerstoneTools.addTool(RectangleRoiTool);
       cornerstoneTools.addTool(FreehandRoiTool);
-      cornerstoneTools.addTool(StackScrollMouseWheelTool)      
+      cornerstoneTools.addTool(StackScrollMouseWheelTool)
     };
-  
+
     // helper function used by the tool button handlers to disable the active tool
     // before making a new tool active
     disableAllTools = () => {
@@ -766,7 +933,7 @@ class DicomViewer extends React.Component {
       cornerstoneTools.setToolEnabled('FreehandRoi');
       cornerstoneTools.setToolEnabled('StackScrollMouseWheel')
     };
-  
+
     runTool2 = (index, image) => {
       cornerstone.disable(this.dicomImage);
       this.displayImageFromFilesByImage(index, image);
@@ -786,25 +953,30 @@ class DicomViewer extends React.Component {
           //console.log('openimage, this.dicomImage: ', this.dicomImage)
           cornerstone.disable(this.dicomImage);
           this.displayImageFromFiles(opt);
-          break   
+          break
         }
-        case 'openLocalFs': {
-          console.log('openLocalFs: ', opt);
+        case 'Mohammad':{
           cornerstone.disable(this.dicomImage);
-          this.loadImage(opt);
-          break   
-        } 
+          this.displayImageFromFilesMohammad(opt);
+          break
+        }
+        // case 'openLocalFs': {
+        //   console.log('openLocalFs: ', opt);
+        //   cornerstone.disable(this.dicomImage);
+        //   // this.loadImage(opt);
+        //   break
+        // }
         case 'openSandboxFs': {
-          //console.log('openSandboxFs: ', opt)
+          console.log('openSandboxFs: ', opt)
           cornerstone.disable(this.dicomImage);
-          //this.setState({ file: opt })
+          this.setState({ file: opt })
           this.loadImage(undefined, undefined, opt);
-          break   
-        }         
+          break
+        }
         case 'openurl': {
-          //console.log('run tool opt: ', opt)  
+          //console.log('run tool opt: ', opt)
           this.showOpenUrlDlg(opt);
-          break                 
+          break
         }
         case 'clear': {
           this.setState({ visibleCinePlayer: false });
@@ -812,14 +984,14 @@ class DicomViewer extends React.Component {
           //this.props.clearingStore()
           cornerstone.disable(this.dicomImage);
           break
-        }  
+        }
         case 'notool': {
           this.disableAllTools();
 
           //const element = this.dicomImage
 
           //cornerstoneTools.clearToolState(element, 'Length')
-          
+
           //const toolStateManager = cornerstoneTools.getElementToolStateManager(element)
           //console.log('toolStateManager.toolState: ', toolStateManager.toolState)
           /*
@@ -878,27 +1050,27 @@ class DicomViewer extends React.Component {
                 }
               }
           }
-          cornerstoneTools.addToolState(element, 'RectangleRoi', measurementData)    
+          cornerstoneTools.addToolState(element, 'RectangleRoi', measurementData)
           cornerstoneTools.setToolActive('RectangleRoi', { mouseButtonMask: 1 })
-          */  
-          //cornerstone.updateImage(element)   
+          */
+          //cornerstone.updateImage(element)
           break
         }
         case 'Wwwc': {
           cornerstoneTools.setToolActive('Wwwc', { mouseButtonMask: 1 });
           break
-        }  
+        }
         case 'Pan': {
           cornerstoneTools.setToolActive('Pan', { mouseButtonMask: 1 });
-          break   
-        }  
+          break
+        }
         case 'Zoom': {
           cornerstoneTools.setToolActive(isMobile ? 'ZoomTouchPinch' : 'Zoom', { mouseButtonMask: 1 });
           break
         }
         case 'Length': {
           cornerstoneTools.setToolActive('Length', isMobile ? { isTouchActive: true } : { mouseButtonMask: 1 });
-          break  
+          break
         }
         case 'Probe': {
             cornerstoneTools.setToolActive('Probe', { mouseButtonMask: 1 });
@@ -906,35 +1078,35 @@ class DicomViewer extends React.Component {
         }
         case 'EllipticalRoi': {
           cornerstoneTools.setToolActive('EllipticalRoi', { mouseButtonMask: 1 });
-          break   
+          break
         }
         case 'RectangleRoi': {
           cornerstoneTools.setToolActive('RectangleRoi', { mouseButtonMask: 1 });
-          break  
+          break
         }
         case 'Angle': {
           cornerstoneTools.setToolActive('Angle', { mouseButtonMask: 1 });
-          break 
+          break
         }
         case 'Magnify': {
           cornerstoneTools.setToolActive('Magnify', { mouseButtonMask: 1 });
-          break  
+          break
         }
         case 'FreehandRoi': {
           cornerstoneTools.setToolActive('FreehandRoi', { mouseButtonMask: 1 });
-          break 
+          break
         }
         case 'Invert': {
           const element = this.dicomImage;
           const viewport = cornerstone.getViewport(element);
           viewport.invert = !viewport.invert;
           cornerstone.setViewport(element, viewport);
-          break 
-        }         
+          break
+        }
         case 'saveas': {
             let type = localStorage.getItem(SETTINGS_SAVEAS);
             if (getSettingsSaveInto() === 'local') {
-              // cornerstoneTools.SaveAs(this.dicomImage, `${this.filename}.${type}`, `image/${type}`)   
+              // cornerstoneTools.SaveAs(this.dicomImage, `${this.filename}.${type}`, `image/${type}`)
               const element = this.dicomImage;
               const viewport = cornerstone.getViewport(element);
               const canvas = document.getElementsByClassName('cornerstone-canvas')[this.props.activeDcmIndex];
@@ -943,16 +1115,16 @@ class DicomViewer extends React.Component {
               const rows = this.image.rows * zoom;
 
               let myCanvas = document.createElement('canvas');
-              myCanvas = this.cropCanvas(canvas, 
-                Math.round(canvas.width / 2 - cols / 2), 
-                Math.round(canvas.height / 2 - rows / 2), 
+              myCanvas = this.cropCanvas(canvas,
+                Math.round(canvas.width / 2 - cols / 2),
+                Math.round(canvas.height / 2 - rows / 2),
                 cols, rows);
 
               let a = document.createElement("a");
               a.href = myCanvas.toDataURL(`image/${type}`);
               a.download = `${this.filename}.${type}`;
               document.body.appendChild(a); // Required for this to work in FireFox
-              a.click()           
+              a.click()
 
             } else { // store image into sandbox file system
               const element = this.dicomImage;
@@ -963,11 +1135,11 @@ class DicomViewer extends React.Component {
               const rows = this.image.rows * zoom;
 
               let myCanvas = document.createElement('canvas');
-              myCanvas = this.cropCanvas(canvas, 
-                Math.round(canvas.width / 2 - cols / 2), 
-                Math.round(canvas.height / 2 - rows / 2), 
+              myCanvas = this.cropCanvas(canvas,
+                Math.round(canvas.width / 2 - cols / 2),
+                Math.round(canvas.height / 2 - rows / 2),
                 cols, rows);
-              
+
               blobUtil.canvasToBlob(myCanvas, `image/${type}`).then(blob => {
                 blobUtil.blobToArrayBuffer(blob).then(arrayBuffer => {
                   const name = `${getFileName(this.filename)}-MPR-${this.mprPlane}`;
@@ -997,7 +1169,7 @@ class DicomViewer extends React.Component {
                   } while (!done)
                 })
               })
-            }  
+            }
           break
         }
         case 'cine': {
@@ -1017,12 +1189,12 @@ class DicomViewer extends React.Component {
           this.measurementRemove(opt);
           this.props.setActiveMeasurements(this.measurements);
           break
-        }  
-        case 'removetools': {   
+        }
+        case 'removetools': {
           const element = this.dicomImage;
-          // for each measurement remove it 
+          // for each measurement remove it
           this.measurements.forEach(measure => {
-            cornerstoneTools.clearToolState(element, measure.tool)         
+            cornerstoneTools.clearToolState(element, measure.tool)
           });
           cornerstone.updateImage(element);
           this.measurementClear();
@@ -1030,7 +1202,7 @@ class DicomViewer extends React.Component {
           db.measurement.where('sopinstanceuid').equals(this.sopInstanceUid).delete();
           this.props.setActiveMeasurements(this.measurements);
           break
-        }  
+        }
         case 'savetools': {
           // first, remove eventually previous measurements from db
           db.measurement.where('sopinstanceuid').equals(this.sopInstanceUid).delete();
@@ -1038,14 +1210,14 @@ class DicomViewer extends React.Component {
           this.measurements.forEach(measure => {
             try {
               db.measurement.add({
-                sopinstanceuid: this.sopInstanceUid, 
+                sopinstanceuid: this.sopInstanceUid,
                 tool: measure.tool,
                 note: measure.note,
                 data: measure.data
               })
             } catch(error) {
               console.error(error)
-            }                       
+            }
           });
           break
         }
@@ -1065,7 +1237,7 @@ class DicomViewer extends React.Component {
       // set its dimensions
       newCanvas.width = width;
       newCanvas.height = height;
-      // draw the canvas in the new resized temp canvas 
+      // draw the canvas in the new resized temp canvas
       newCanvas.getContext('2d').drawImage(canvas, x, y, width, height, 0, 0, width, height);
       return newCanvas
     };
@@ -1114,14 +1286,14 @@ class DicomViewer extends React.Component {
             cornerstoneTools.setToolActive('Angle', { mouseButtonMask: 1 })
           } else if (value === 0) {
             cornerstoneTools.setToolPassive('Angle')
-          }          
+          }
           break;
         case 'Magnify':
           if (value === 1) {
             cornerstoneTools.setToolActive('Magnify', { mouseButtonMask: 1 })
           } else if (value === 0) {
             cornerstoneTools.setToolPassive('Magnify')
-          }          
+          }
           break;
         case 'EllipticalRoi':
           if (value === 1) {
@@ -1146,7 +1318,7 @@ class DicomViewer extends React.Component {
           break;
         default:
             break
-        }  
+        }
     };
 
     runCinePlayer = (cmdName) => {
@@ -1163,7 +1335,7 @@ class DicomViewer extends React.Component {
           if (this.state.frame > 1) {
             let frame = this.state.frame-1;
             this.setState({frame: frame});
-            scrollToIndex(element, frame-1)       
+            scrollToIndex(element, frame-1)
           }
           break
         }
@@ -1183,14 +1355,14 @@ class DicomViewer extends React.Component {
             this.setState({frame: frame});
             scrollToIndex(element, frame-1)
           }
-          break  
+          break
         }
         case 'lastframe': {
           let frame = this.numberOfFrames;
           this.setState({frame: frame});
           scrollToIndex(element, frame-1);
-          break    
-        }                       
+          break
+        }
         default:
           break
       }
@@ -1211,9 +1383,11 @@ class DicomViewer extends React.Component {
     mprPlanePosition = () => {
       //console.log("mprPlanePosition: ")
       try {
+        console.log("is dicom:   " + this.isDicom);
         if (!this.isDicom) return this.mprPlane;
-        // console.log("image data:" + this.image.data);
+        console.log("image data:   " + this.image.data);
         const imageOrientation = this.image.data.string('x00200037').split('\\');
+        console.log("image imageOrientation:   " + imageOrientation);
         let v = new Array(6).fill(0);
         v[0] = parseFloat(imageOrientation[0]); // the x direction cosines of the first row X
         v[1] = parseFloat(imageOrientation[1]); // the y direction cosines of the first row X
@@ -1232,9 +1406,11 @@ class DicomViewer extends React.Component {
           this.mprPlane = 'axial'
         }
       } catch(error) { // it's not possible to build MPR
+        console.log('its not possible to build MPR');
         this.mprPlane = ''
-      } 
-      return this.mprPlane 
+      }
+      console.log("this.mprPlane: " + this.mprPlane);
+      return this.mprPlane
     };
 
     transpose = (matrix) => {
@@ -1248,9 +1424,9 @@ class DicomViewer extends React.Component {
       //console.log(`mprRenderYZPlane, origin: ${origin}, x: ${x}`)
       //console.log('mprRenderYZPlane, volume: ', this.volume)
 
-      if (origin === 'sagittal') 
+      if (origin === 'sagittal')
         this.mprPlane = 'coronal';
-      else if (origin === 'axial') 
+      else if (origin === 'axial')
         this.mprPlane = 'sagittal';
       else
         this.mprPlane = 'sagittal';
@@ -1265,16 +1441,16 @@ class DicomViewer extends React.Component {
       if (origin === 'sagittal') {
         let xoffset = Math.floor(this.xSize / 2) - Math.floor(this.zSize / 2);
         let plane = new Int16Array(this.xSize * this.ySize);
-        for (let y = 0; y < this.ySize; y++) 
-          for (let z = 0; z < this.zSize; z++) 
+        for (let y = 0; y < this.ySize; y++)
+          for (let z = 0; z < this.zSize; z++)
             plane[z + this.ySize * y + xoffset] = this.volume[z][x + this.ySize * y];
         this.loadImageFromCustomObject(this.xSize, this.ySize, plane)
 
       } else if (origin === 'coronal') {
         let xoffset = Math.floor(this.xSize / 2) - Math.floor(this.zSize / 2);
         let plane = new Int16Array(this.xSize * this.ySize);
-        for (let y = 0; y < this.ySize; y++) 
-          for (let z = 0; z < this.zSize; z++) 
+        for (let y = 0; y < this.ySize; y++)
+          for (let z = 0; z < this.zSize; z++)
             plane[z + this.ySize * y + xoffset] = this.volume[z][x + this.ySize * y];
         this.loadImageFromCustomObject(this.xSize, this.ySize, plane)
 
@@ -1287,8 +1463,8 @@ class DicomViewer extends React.Component {
     mprBuildYZPlane = (x) => {
       //console.log(`mprBuildYZPlane, ySize: ${this.ySize}, zSize: ${this.zSize} `)
       let plane = new Int16Array(this.ySize * this.zSize);
-      for (var y = 0; y < this.ySize; y++) 
-        for (var z = 0; z < this.zSize; z++) 
+      for (var y = 0; y < this.ySize; y++)
+        for (var z = 0; z < this.zSize; z++)
           plane[y + this.ySize * z] = this.volume[z][x + this.ySize * y];
       //console.log('mprBuildYZPlane, plane: ', plane)
       return plane
@@ -1301,9 +1477,9 @@ class DicomViewer extends React.Component {
       //console.log(`mprRenderXZPlane, origin: ${origin}, y: ${y}`)
       //console.log('mprRenderXZPlane, volume: ', this.volume)
 
-      if (origin === 'sagittal') 
+      if (origin === 'sagittal')
         this.mprPlane = 'axial';
-      else if (origin === 'axial') 
+      else if (origin === 'axial')
         this.mprPlane = 'coronal';
       else
         this.mprPlane = 'axial';
@@ -1318,7 +1494,7 @@ class DicomViewer extends React.Component {
       if (origin === 'sagittal') {
         let xoffset = Math.floor(this.xSize / 2) - Math.floor(this.zSize / 2);
         let plane = new Int16Array(this.xSize * this.ySize);
-        for (let x = 0; x < this.xSize; x++) 
+        for (let x = 0; x < this.xSize; x++)
           for (let z = 0; z < this.zSize; z++)
             plane[z + this.xSize * x + xoffset] = this.volume[z][x + this.xSize * y];
         this.loadImageFromCustomObject(this.xSize, this.ySize, plane)
@@ -1328,24 +1504,29 @@ class DicomViewer extends React.Component {
         this.loadImageFromCustomObject(this.xSize, this.zSize, xzPlane)
       }
     };
-  
+
     mprBuildXZPlane = (y) => {
       //console.log(`mprBuildXZPlane, xSize: ${this.xSize}, zSize: ${this.zSize} `)
       let plane = new Int16Array(this.xSize * this.zSize);
-      for (let x = 0; x < this.xSize; x++) 
+      for (let x = 0; x < this.xSize; x++)
         for (let z = 0; z < this.zSize; z++)
           plane[x + this.xSize * z] = this.volume[z][x + this.xSize * y];
-      //console.log('mprBuildXZPlane, plane: ', plane)    
+      //console.log('mprBuildXZPlane, plane: ', plane)
       return plane
     };
 
     mprIsOrthogonalView = () => {
-      //console.log('mprIsOrthogonalView: ', this.mprPlane)
+      console.log('---------------------------------------');
+      console.log('mprPlane: ', this.mprPlane)
+      console.log('this.props.layout[0]: ', this.props.layout[0])
+      console.log('this.props.layout[1]: ', this.props.layout[1])
+      console.log('result: ' + (this.mprPlane !== '' && this.props.layout[0] === 1 && this.props.layout[1] === 3) ? 'true' : 'false')
+      console.log('---------------------------------------');
       return (this.mprPlane !== '' && this.props.layout[0] === 1 && this.props.layout[1] === 3)
     };
 
     // -------------------------------------------------------------------------------------------- MPR
-    
+
     dicomImageRef = el => {
       this.dicomImage = el
     };
@@ -1353,34 +1534,36 @@ class DicomViewer extends React.Component {
     onImageClick = () => {
       console.log('onImageClick: ')
     };
-    
+
     render() {
       //console.log('DicomViewer render: ')
 
       //this.props.visible ? document.body.style = 'background: #000000;' : document.body.style = 'background: $md-grey-700;'
 
       const isOpen = this.props.isOpen[this.props.index];
+      console.log('isOpen: ' + isOpen);
       //const visibleHistogram = this.state.visibleHistogram
       const visibleOpenUrlDlg = this.state.visibleOpenUrlDlg;
       const errorOnOpenImage = this.state.errorOnOpenImage;
       const progress = this.state.progress;
 
       const styleContainer = {
-        width: '100%', 
-        height: '100%', 
+        width: '100%',
+        height: '100%',
         border: this.props.activeDcmIndex === this.props.index && (this.props.layout[0] > 1 || this.props.layout[1] > 1) ? 'solid 1px #AAAAAA' : null,
         position: 'relative',
       };
 
       const styleDicomImage = {
-        width: '100%', 
-        height: '100%', 
+        width: '100%',
+        height: '100%',
         position: 'relative',
       };
 
       const overlay = getSettingsOverlay();
+      console.log('overlay: ' + overlay);
 
-      return ( 
+      return (
         <div className="container" style={styleContainer} >
 
           {visibleOpenUrlDlg ? <OpenUrlDlg progress={progress} onClose={this.hideOpenUrlDlg} /> : null}
@@ -1412,17 +1595,17 @@ class DicomViewer extends React.Component {
             <DialogContent>
               <DialogContentText id="alert-dialog-description">
                 <Typography gutterBottom>
-                  CORS or Cross Origin Resource Sharing is a browser security policy 
-                  that prevents javascript from loading data from a server with a different base URL 
-                  than the server that served up the javascript file. 
-                </Typography> 
+                  CORS or Cross Origin Resource Sharing is a browser security policy
+                  that prevents javascript from loading data from a server with a different base URL
+                  than the server that served up the javascript file.
+                </Typography>
                 <Typography gutterBottom>
-                  See the &nbsp; 
+                  See the &nbsp;
                   <Link href="http://enable-cors.org/" target='_blank' color='textPrimary'>
                     Enable CORS site
                   </Link>
-                  &nbsp; for information about CORS.                     
-                </Typography>                                
+                  &nbsp; for information about CORS.
+                </Typography>
               </DialogContentText>
             </DialogContent>
             <DialogActions>
@@ -1434,8 +1617,8 @@ class DicomViewer extends React.Component {
 
           <div
             style={{
-              width: '100%', 
-              height: '100%', 
+              width: '100%',
+              height: '100%',
               position: "relative",
               color: '#FFFFFF',
               textShadow: '1px 1px #000000'
@@ -1443,7 +1626,7 @@ class DicomViewer extends React.Component {
             onContextMenu={() => false}
             className="cornerstone-enabled-image"
           >
-            <div 
+            <div
               ref={this.dicomImageRef} style={styleDicomImage}
             >
             </div>
@@ -1452,76 +1635,76 @@ class DicomViewer extends React.Component {
               id={`mrtopleft-${this.props.index}`}
               style={{ position: "absolute", top: 0, left: 3, display: isOpen && overlay ? "" : "none" }}
             >
-              
+
             </div>
             <div
               id={`mrtopright-${this.props.index}`}
               style={{ position: "absolute", top: 0, right: 3, display: isOpen && overlay ? "" : "none" }}
             >
-              
+
             </div>
             <div
               id={`mrbottomright-${this.props.index}`}
               style={{ position: "absolute", bottom: 0, right: 3, display: isOpen && overlay ? "" : "none" }}
             >
-              
+
             </div>
             <div
               id={`mrbottomleft-${this.props.index}`}
               style={{ position: "absolute", bottom: 0, left: 3, display: isOpen && overlay ? "" : "none" }}
             >
-              
-            </div>   
+
+            </div>
 
             <div
               id={`mrtopcenter-${this.props.index}`}
               style={{ position: "absolute", top: 0, width: '60px', left: '50%', marginLeft: '0px', display: isOpen && overlay ? "" : "none" }}
             >
-              
+
             </div>
 
             <div
               id={`mrleftcenter-${this.props.index}`}
               style={{ position: "absolute", top: '50%', width: '30px', left: 3, marginLeft: '0px', display: isOpen && overlay ? "" : "none" }}
             >
-              
-            </div>    
+
+            </div>
 
             <div
               id={`mrrightcenter-${this.props.index}`}
               style={{ position: "absolute", top: '50%', width: '30px', right: 3, marginRight: '-20px', display: isOpen && overlay ? "" : "none" }}
             >
-              
-            </div>                
+
+            </div>
 
             <div
               id={`mrbottomcenter-${this.props.index}`}
               style={{ position: "absolute", bottom: 0, width: '60px', left: '50%', marginLeft: '0px', display: isOpen && overlay ? "" : "none" }}
             >
-              
+
             </div>
 
             { this.state.visibleCinePlayer && this.numberOfFrames > 1 ? (
               <div style={{position:"absolute", width:'100%', bottom:0, textAlign:'center'}}>
                 <div style={{margin:'0 auto', width:'240px', backgroundColor:'rgba(136, 136, 136, 0.5)'}}>
-                  <CinePlayer runCinePlayer={this.runCinePlayer} inPlay={this.state.inPlay} />  
-                  <div 
+                  <CinePlayer runCinePlayer={this.runCinePlayer} inPlay={this.state.inPlay} />
+                  <div
                     id={`frameLabel-${this.props.index}`}
                     style={{ width:230, margin:'0 auto', marginTop:-10, textAlign:"center" }}
                   >
                     {this.state.frame} / {this.numberOfFrames}
-                  </div> 
-                </div>               
-              </div> 
+                  </div>
+                </div>
+              </div>
               ) : null
-            }  
+            }
             {/*<div style={{position:"absolute", width:'100%', height:'100%', top:0, left:0}}></div>*/}
           </div>
         </div>
       )
     }
   }
-  
+
 const mapStateToProps = (state) => {
   return {
     files: state.files,

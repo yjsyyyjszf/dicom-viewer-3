@@ -34,6 +34,14 @@ import Snackbar from '@material-ui/core/Snackbar'
 import TextField from '@material-ui/core/TextField'
 import Toolbar from '@material-ui/core/Toolbar'
 import Typography from '@material-ui/core/Typography'
+import Grid from '@material-ui/core/Grid'
+import GridList from '@material-ui/core/GridList';
+import GridListTile from '@material-ui/core/GridListTile';
+import GridListTileBar from '@material-ui/core/GridListTileBar';
+// import ListSubheader from '@material-ui/core/ListSubheader';
+// import InfoIcon from '@material-ui/icons/Info';
+import Slide from '@material-ui/core/Slide';
+
 //import { FixedSizeList } from 'react-window'
 //import {List as ListVirtual} from 'react-virtualized'
 
@@ -109,9 +117,10 @@ import {
   // mdiSkipBackward,
   // mdiSkipForward,
   // mdiSkipNext,
-  // mdiSkipPrevious, 
-  // mdiArrowLeft, 
-  mdiArrowLeftCircle, mdiViewList,
+  // mdiSkipPrevious,
+  // mdiArrowLeft,
+  mdiArrowLeftCircle,
+  // mdiViewList,
 } from '@mdi/js'
 
 import './App.css'
@@ -157,13 +166,14 @@ const styles = theme => ({
   },
 
   title: {
-    flexGrow: 1,
-    textAlign: 'center'
+    // flexGrow: 1,
+    textAlign: 'center',
+    marginRight: theme.spacing(2),
   },
 
   appBar: {
     position: 'relative',
-    backgroundColor: '#453479',
+    backgroundColor: '#3d9c9f',
     zIndex: theme.zIndex.drawer + 1,
     transition: theme.transitions.create(['width', 'margin'], {
       easing: theme.transitions.easing.sharp,
@@ -173,9 +183,9 @@ const styles = theme => ({
 
   toolbarCard: {
     zIndex: theme.zIndex.drawer + 1,
-    backgroundColor: '#453479',
+    backgroundColor: '#3d9c9f',
     position: 'absolute',
-    margin: '0 25% 0 25%',
+    margin: '0 20% 0 20%',
     transition: theme.transitions.create(['width', 'margin'], {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.leavingScreen,
@@ -238,6 +248,22 @@ const styles = theme => ({
     marginLeft: '-20px'
   },
 
+
+  rootGridList: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    overflow: 'hidden',
+    height: '100%',
+    backgroundColor: '#e4e5e655',
+  },
+  gridList: {
+    width: 500,
+    height: '100vh',
+  },
+  icon: {
+    color: 'rgba(255, 255, 255, 0.54)',
+  },
 });
 
 class App extends PureComponent {
@@ -279,7 +305,7 @@ class App extends PureComponent {
     this.seriesListDicomViewers = [];
 
     this.seriesCounter = 0;
-    
+
   }
 
   state = {
@@ -321,6 +347,8 @@ class App extends PureComponent {
     totalSeries: null,
     seriesListDicomViewers: [],
     seriesCounter: 0,
+
+    visibleExplorer: false,
   };
 
   setDcmViewer = (index, type) => {
@@ -419,7 +447,7 @@ class App extends PureComponent {
   handleOpenSandboxFs = (fsItem) => {
     //this.hideMainMenu()
     this.dicomViewersRefs[this.props.activeDcmIndex].runTool('clear');
-    this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openSandboxFs', fsItem)
+    // this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openSandboxFs', fsItem)
   };
 
   handleOpenImage = (index) => {
@@ -470,7 +498,7 @@ class App extends PureComponent {
       this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderYZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData);
     else if (plane === 'coronal' && visibleMprAxial)
       this.dicomViewersRefs[this.props.activeDcmIndex].mprRenderXZPlane(this.dicomViewersRefs[0].filename, plane, index, this.mprData);
-    else // it's not a possible MPR, then open as normal dicom file  
+    else // it's not a possible MPR, then open as normal dicom file
       this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', index)
   };
 
@@ -497,9 +525,9 @@ class App extends PureComponent {
   }
 
   async handleOpenFolder(files) {
-  
+
     let seriesNumberList = [];
-    let _totalSeries = [];    
+    let _totalSeries = [];
     let _seriesCounter = 0;
 
     for (let i = 0; i < files.length; i++) {
@@ -507,34 +535,34 @@ class App extends PureComponent {
       this.files.push(files[i]);
 
       if (files[i] !== undefined) {
-                                                                                   
-        // extract image and data from file                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-        let imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(files[i]);        
-        let image = await cornerstone.loadImage(imageId).then((image) => {          
+
+        // extract image and data from file
+        let imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(files[i]);
+        let image = await cornerstone.loadImage(imageId).then((image) => {
           return image;
         });
         let fileImageSeriesNumber = image.data.string('x00200011');
-        
+
         // if found new series do:
         if (!seriesNumberList.includes(fileImageSeriesNumber)) {
 
-            seriesNumberList.push(fileImageSeriesNumber);
+          seriesNumberList.push(fileImageSeriesNumber);
 
-            _totalSeries.push({
-              seriesNumber: fileImageSeriesNumber,
-              images: [image,],
-              files: [files[i],]
-            });
+          _totalSeries.push({
+            seriesNumber: fileImageSeriesNumber,
+            images: [image,],
+            files: [files[i],]
+          });
 
-            _seriesCounter++;
-          } else {
-            _totalSeries.forEach(ts => {
-              if (ts.seriesNumber === fileImageSeriesNumber) {
-                ts.images.push(image);
-                ts.files.push(files[i]);
-              }
-            });
-          }                  
+          _seriesCounter++;
+        } else {
+          _totalSeries.forEach(ts => {
+            if (ts.seriesNumber === fileImageSeriesNumber) {
+              ts.images.push(image);
+              ts.files.push(files[i]);
+            }
+          });
+        }
       } else {
         console.log("file is undefinde");
       }
@@ -545,11 +573,12 @@ class App extends PureComponent {
     this.volume = [];
     for (let i = 0; i < 16; i++)
       if (this.dicomViewersRefs[i] !== undefined) {
-        // this.dicomViewersRefs[i].runTool('clear')
+        this.dicomViewersRefs[i].runTool('clear')
       }
     this.setState({
+      visibleExplorer: true,
       totalSeries: _totalSeries,
-      seriesCounter:_seriesCounter,
+      seriesCounter: _seriesCounter,
       seriesListDicomViewers: this.seriesListDicomViewers,
       sliceIndex: 0,
       sliceMax: 1,
@@ -772,13 +801,14 @@ class App extends PureComponent {
     if (this.props.files !== null) {
       // this.changeLayout(1, 1);
 
-      this.dicomViewersRefs[this.props.activeDcmIndex].runTool(
-        'openLocalFs', 
-        this.state.totalSeries[index].files[0]
-        );
+      this.dicomViewersRefs[this.props.activeDcmIndex].runTool('Mohammad',this.state.totalSeries[index].files);
+      // this.dicomViewersRefs[this.props.activeDcmIndex].runTool(
+      //   'openimage',
+      //   0
+      // );
 
       // this.seriesListDicomViewers = [];
-      // for (let i = 0; i < this.state.seriesCounter; i++) {      
+      // for (let i = 0; i < this.state.seriesCounter; i++) {
       //   this.seriesListDicomViewers.push(this.setDcmViewer(i, 1))
       // }
 
@@ -821,11 +851,11 @@ class App extends PureComponent {
       this.changeLayout(1, 1);
 
       // if(opt === 1){
-      //   this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', 0);
+        // this.dicomViewersRefs[this.props.activeDcmIndex].runTool('openimage', 0);
       // }
 
       // this.seriesListDicomViewers = [];
-      // for (let i = 0; i < this.state.seriesCounter; i++) {      
+      // for (let i = 0; i < this.state.seriesCounter; i++) {
       //   this.seriesListDicomViewers.push(this.setDcmViewer(i, 1))
       // }
 
@@ -837,29 +867,35 @@ class App extends PureComponent {
 
       const sliceMax = this.props.files.length;
       this.setState({sliceMax: sliceMax}, () => {
-        this.mprPlanePosition();
-        if (this.mprPlane === 'sagittal')
-          this.setState({
-            visibleMprOrthogonal: false,
-            visibleMprSagittal: true,
-            visibleMprAxial: false,
-            visibleMprCoronal: false
-          });
-        else if (this.mprPlane === 'coronal')
-          this.setState({
-            visibleMprOrthogonal: false,
-            visibleMprSagittal: false,
-            visibleMprAxial: false,
-            visibleMprCoronal: true
-          });
-        else
-          this.setState({
-            visibleMprOrthogonal: false,
-            visibleMprSagittal: false,
-            visibleMprAxial: true,
-            visibleMprCoronal: false
-          })
+        // this.mprPlanePosition();
+        // if (this.mprPlane === 'sagittal')
+        //   this.setState({
+        //     visibleMprOrthogonal: false,
+        //     visibleMprSagittal: true,
+        //     visibleMprAxial: false,
+        //     visibleMprCoronal: false
+        //   });
+        // else if (this.mprPlane === 'coronal')
+        //   this.setState({
+        //     visibleMprOrthogonal: false,
+        //     visibleMprSagittal: false,
+        //     visibleMprAxial: false,
+        //     visibleMprCoronal: true
+        //   });
+        // else
+        //   this.setState({
+        //     visibleMprOrthogonal: false,
+        //     visibleMprSagittal: false,
+        //     visibleMprAxial: true,
+        //     visibleMprCoronal: false
+        //   })
       })
+    }else {
+      console.log('openMultipleFilesCompleted, No DICOM files found.')
+      // console.log('openMultipleFilesCompleted, this.props.allFiles: ', this.props.allFiles)
+      //this.setState({titleMessage: 'Warning', textMessage: 'No DICOM files found.'}, () => {
+        //this.setState({ visibleMessage: true })
+      //})
     }
   };
 
@@ -1050,7 +1086,7 @@ class App extends PureComponent {
 
   };
 
-layoutListClick = (index) => {
+  layoutListClick = (index) => {
     // if (isMobile && index === this.props.activeDcmIndex) return;
 
     console.log("indexxxxxxxxxx : " + index);
@@ -1183,20 +1219,20 @@ layoutListClick = (index) => {
   };
 
   buildLayoutList = () => {
-    let dicomviewers = [];    
+    let dicomviewers = [];
     for (let i = 0; i < this.state.seriesCounter; i++) {
-      const styleLayoutGrid = {
-        border: 'solid 1px #fff',
-        width: '100%',
-        height: '100px',
-        marginTop: '5px',
-      };
+      // const styleLayoutGrid = {
+        // border: 'solid 1px #fff',
+        // width: '100%',
+        // height: '100px',
+        // marginTop: '5px',
+      // };
 
       // this.seriesListDicomViewers[i].runTool2(i, this.state.totalSeries[i].images[0]);
 
       dicomviewers.push(
         <ListItem button onClick={() => this.layoutListClick(i)}>
-          <row style={{width: '100%'}}>
+          <row style={{width: 'inherit'}}>
             {/*< div
               key={i}
               style={styleLayoutGrid}
@@ -1205,9 +1241,9 @@ layoutListClick = (index) => {
             >
               {this.seriesListDicomViewers[i]}
             </div>*/}
-            <SeriesItem image={this.state.totalSeries[i] ? this.state.totalSeries[i].images[0] : null} />
+            <SeriesItem image={this.state.totalSeries[i] ? this.state.totalSeries[i].images[0] : null}/>
             <p
-              style={{padding: 0, margin: '5px 10px 5px 10px'}}
+              style={{padding: 0, margin: '5px 10px 5px 10px', color: '#e4e5e6'}}
             >
               series number: {this.state.totalSeries[i] ? this.state.totalSeries[i].seriesNumber : "{ts.seriesNumber}"}
             </p>
@@ -1220,14 +1256,16 @@ layoutListClick = (index) => {
       <div
         id="dicomviewer-grid1"
         style={{
-          display: 'grid',
+          display: 'flex',
           // gridTemplateRows: `repeat(${this.props.layout[0]}, ${100 / this.props.layout[0]}%)`,
           // gridTemplateColumns: `repeat(${this.props.layout[1]}, ${100 / this.props.layout[1]}%)`,
           height: '100%',
-          width: '100%',
+          width: 'inherit',
         }}
       >
-        {dicomviewers}
+        <List dense={true}>
+          {dicomviewers}
+        </List>
       </div>
     );
   };
@@ -1828,7 +1866,7 @@ layoutListClick = (index) => {
 
     const dcmViewer = this.getActiveDcmViewer();
 
-    const sliceMax = this.state.sliceMax;
+    // const sliceMax = this.state.sliceMax;
 
     const anchorEl = this.state.anchorEl;
     const anchorElMpr = this.state.anchorElMpr;
@@ -1837,7 +1875,7 @@ layoutListClick = (index) => {
     const anchorElLayout = this.state.anchorElLayout;
     // const openLayout = this.state.openLayout;
 
-    let totalSeries = this.state.totalSeries;
+    // let totalSeries = this.state.totalSeries;
 
     //console.log('this.dicomViewersRefs: ', this.dicomViewersRefs)
     //console.log('isMultipleFiles: ', isMultipleFiles)
@@ -1855,14 +1893,18 @@ layoutListClick = (index) => {
       <div>
         <AppBar className={classes.appBar} position='static' elevation={0}>
           <Toolbar variant="dense">
-            <IconButton
-              edge="start"
-              className={classes.menuButton}
-              color="inherit"
-              aria-label="menu"
-              onClick={this.toggleSeriesMenu}>
-              <Icon path={mdiViewList} size={iconSize} color={iconColor}/>
-            </IconButton>
+            {/*<IconButton*/}
+            {/*  edge="start"*/}
+            {/*  className={classes.menuButton}*/}
+            {/*  color="inherit"*/}
+            {/*  aria-label="menu"*/}
+            {/*  onClick={this.toggleSeriesMenu}>*/}
+            {/*  <Icon path={mdiViewList} size={iconSize} color={iconColor}/>*/}
+            {/*</IconButton>*/}
+
+            <Typography variant="overline" className={classes.title}>
+              <strong>M</strong>ed<strong>K</strong>av
+            </Typography>
 
             <Divider
               orientation={"vertical"}
@@ -1891,7 +1933,7 @@ layoutListClick = (index) => {
               role={undefined}
               transition
               disablePortal
-              style={{backgroundColor: '#6c5c89'}}
+              style={{backgroundColor: '#70c4c5'}}
               placement={'center-top'}
             >
               {({TransitionProps, placement}) => (
@@ -1900,7 +1942,7 @@ layoutListClick = (index) => {
                   style={{transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom'}}
                 >
                   <Paper
-                    style={{backgroundColor: '#6c5c89', borderRadius: '0 0 4px 4px'}}
+                    style={{backgroundColor: '#70c4c5', borderRadius: '0 0 4px 4px'}}
                   >
                     <ClickAwayListener onClickAway={(event) => this.toggleOpenMenu(event)}>
                       <MenuList
@@ -1910,7 +1952,7 @@ layoutListClick = (index) => {
                         onKeyDown={(event) => this.toggleOpenMenu(event)}
                       >
 
-                        <MenuItem button onClick={() => this.showFileOpen()}>
+                        <MenuItem disabled button onClick={() => this.showFileOpen()}>
                           <ListItemIcon><Icon path={mdiFolder} size={'1.0rem'} color={iconColor}/></ListItemIcon>
                           <ListItemText
                             classes={primaryClass}
@@ -1923,7 +1965,7 @@ layoutListClick = (index) => {
                                 }}>File</Typography>
                             }/>
                         </MenuItem>
-                        <MenuItem button onClick={() => this.showOpenUrl()}>
+                        <MenuItem disabled button onClick={() => this.showOpenUrl()}>
                           <ListItemIcon><Icon path={mdiWeb} size={'1.0rem'} color={iconColor}/></ListItemIcon>
                           <ListItemText
                             classes={primaryClass}
@@ -1949,7 +1991,7 @@ layoutListClick = (index) => {
                           </MenuItem>
                           : null}
                         {isInputDirSupported() && !isMobile ?
-                          <MenuItem button onClick={() => this.showOpenDicomdir()}>
+                          <MenuItem disabled button onClick={() => this.showOpenDicomdir()}>
                             <ListItemIcon><Icon path={mdiFolderOpen} size={'1.0rem'} color={iconColor}/></ListItemIcon>
                             <ListItemText
                               classes={primaryClass}
@@ -1987,7 +2029,7 @@ layoutListClick = (index) => {
               role={undefined}
               transition
               disablePortal
-              style={{backgroundColor: '#6c5c89', marginTop: '3px'}}
+              style={{backgroundColor: '#70c4c5', marginTop: '3px'}}
               placement={'center-top'}
             >
               {({TransitionProps, placement}) => (
@@ -1997,7 +2039,7 @@ layoutListClick = (index) => {
                 >
                   <Paper
                     style={{
-                      backgroundColor: '#6c5c89',
+                      backgroundColor: '#70c4c5',
                       borderRadius: '0 0 4px 4px',
                     }}
                   >
@@ -2020,14 +2062,10 @@ layoutListClick = (index) => {
               </IconButton>
             </Tooltip>
 
-            <Typography variant="overline" className={classes.title}>
-              <strong>D</strong>icom <strong>V</strong>iewer
-            </Typography>
-
 
             {/*{this.appBarTitle(classes, isOpen, dcmViewer)}*/}
 
-            {/*<div className={classes.grow}/>*/}
+            <div className={classes.grow}/>
             {!isOpen && !isDicomdir ? (
               <IconButton onClick={this.showAbout}>
                 <Icon path={mdiInformationOutline} size={iconSize} color={iconColor}/>
@@ -2091,7 +2129,9 @@ layoutListClick = (index) => {
           </Toolbar>
         </AppBar>
 
-        <Card className={classes.toolbarCard} position='fixed' elevation={0}>
+        <Slide direction="up" in={this.state.visibleExplorer} mountOnEnter unmountOnExit>
+
+          <Card className={classes.toolbarCard} position='fixed' elevation={0}>
           <Toolbar variant="dense" style={{justifyContent: 'center'}}>
 
             <Tooltip title={"Histogram"} placement={"top"} arrow>
@@ -2185,7 +2225,7 @@ layoutListClick = (index) => {
               <IconButton
                 button
                 onClick={(event) => this.toggleImageEdit(event)}
-                // disabled={!isOpen}
+                disabled={!isOpen}
               >
                 <Icon path={mdiImageEdit} size={iconSize} color={iconColor}/>
                 {openImageEdit ? <ExpandMore/> : <ExpandLess/>}
@@ -2214,7 +2254,7 @@ layoutListClick = (index) => {
               anchorEl={anchorElImageEdit}
               role={undefined}
               transition
-              style={{backgroundColor: '#6C5C89'}}
+              style={{backgroundColor: '#70c4c5'}}
               placement={"top"}
             >
               {({TransitionProps, placement}) => (
@@ -2222,7 +2262,7 @@ layoutListClick = (index) => {
                   {...TransitionProps}
                   style={{transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom'}}
                 >
-                  <Paper style={{backgroundColor: '#6C5C89'}}>
+                  <Paper style={{backgroundColor: '#70c4c5'}}>
                     <ClickAwayListener onClickAway={(event) => this.toggleImageEdit(event)}>
                       <MenuList dense={true} component="div" style={{padding: '0'}}>
                         <MenuItem button onClick={() => this.toolExecute('Invert')}>
@@ -2306,8 +2346,8 @@ layoutListClick = (index) => {
             </Tooltip>
 
           </Toolbar>
-        </Card>
-
+          </Card>
+        </Slide>
         <Drawer
           variant="persistent"
           open={visibleSeries}
@@ -2675,7 +2715,11 @@ layoutListClick = (index) => {
         {visibleDownloadZipDlg ? <DownloadZipDlg onClose={this.hideDownloadZipDlg} url={this.url}/> : null}
 
         {visibleOpenMultipleFilesDlg ?
-          <OpenMultipleFilesDlg onClose={this.hideOpenMultipleFilesDlg} files={this.files} origin={'local'}/> : null}
+          <OpenMultipleFilesDlg
+            onClose={this.hideOpenMultipleFilesDlg}
+            files={this.files}
+            origin={'local'}
+          /> : null}
 
         <Dialog
           open={visibleClearMeasureDlg}
@@ -2765,9 +2809,52 @@ layoutListClick = (index) => {
           message="Volume building, wait please ..."
         />
 
-        <div style={{height: 'calc(100vh - 48px)'}}>
-          {this.buildLayoutGrid()}
-        </div>
+        <Grid container>
+          <Grid item xs={2}>
+          <Slide direction="right" in={this.state.visibleExplorer} mountOnEnter unmountOnExit>
+            <div className={classes.rootGridList}>
+              {/*<div style={{height: '100%', backgroundColor: '#e4e5e655'}}>*/}
+              <GridList cellHeight={180} className={classes.gridList}>
+                {/*<GridListTile key="Subheader" cols={1} style={{height: 'auto', width:'100%'}}>
+                  <ListSubheader component="div">Series List:</ListSubheader>
+                </GridListTile>*/}
+
+                {this.state.totalSeries ? this.state.totalSeries.map((tile, index) => (
+                  <GridListTile
+                    key={index}
+                    cols={1}
+                    style={{height: 'auto', width:'100%', padding:"16px"}}
+                    button onClick={() => this.layoutListClick(index)}
+                  >
+                    <row style={{width: '100%'}}>
+                      <SeriesItem image={tile ? tile.images[0] : null}/>
+                    </row>
+                    <GridListTileBar
+                    style={{height:'48px'}}
+                      subtitle={`series number: ${tile ? tile.seriesNumber : "{ts.seriesNumber}"}`}
+                      title={<span style={{fontSize:'10px'}}>number of items: {tile.files.length}</span>}
+                      // actionIcon={
+                      //   <IconButton aria-label={`info about ${tile.seriesNumber}`} className={classes.icon}>
+                      //     <InfoIcon/>
+                      //   </IconButton>
+                      // }
+                    />
+                  </GridListTile>
+                )) : null}
+                <GridListTile key="Subheader" cols={1} style={{height: '54px', width:'100%'}}>
+                </GridListTile>
+              </GridList>
+              {this.buildLayoutList()}
+            </div>
+            </Slide>
+          </Grid>
+          <Grid item xs={10}>
+            <div style={{height: 'calc(100vh - 48px)'}}>
+              {this.buildLayoutGrid()}
+            </div>
+          </Grid>
+        </Grid>
+
 
         <div>
           <input

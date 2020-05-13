@@ -17,12 +17,12 @@ const AboutDlg = ({ onClose }) => {
 
     const linkRepository = (
         <Typography variant='body2'>
-            <Link 
-                href={urlRepository} 
+            <Link
+                href={urlRepository}
                 target='_blank'
                 style={{ color: '#999999' }}
             >
-                https://github.com/webnamics/u-dicom-viewer
+                https://github.com/mmollaahmadi/dicom-viewer
             </Link>
         </Typography>
     )
@@ -30,7 +30,7 @@ const AboutDlg = ({ onClose }) => {
     const version = (
         <Typography variant='body2' style={{ color: '#999999' }}>
             {packageJson.version}
-        </Typography>        
+        </Typography>
     )
 
     return (
@@ -44,18 +44,18 @@ const AboutDlg = ({ onClose }) => {
             <DialogContent>
                 <List>
                     <ListItem>
-                        <ListItemText 
-                            primary='Repository URL:' 
-                            secondary={linkRepository} 
+                        <ListItemText
+                            primary='Repository URL:'
+                            secondary={linkRepository}
                         />
-                    </ListItem>    
+                    </ListItem>
                     <ListItem>
-                        <ListItemText 
-                            primary='Version:' 
-                            secondary={version} 
+                        <ListItemText
+                            primary='Version:'
+                            secondary={version}
                         />
-                    </ListItem>                        
-                </List>        
+                    </ListItem>
+                </List>
             </DialogContent>
             <DialogActions>
                 <Button autoFocus onClick={onClose}>

@@ -9,7 +9,7 @@ const styleTable = {
 const styleTableTd = {
   width: '25px',
   height: '25px',
-  border: 'solid 1px #403368',
+  border: 'solid 1px #3d9c9f',
 };
 
 class LayoutTool extends PureComponent {
@@ -32,7 +32,7 @@ class LayoutTool extends PureComponent {
       let rows = this.tableRef.current.rows;
       for (let i=0; i <= row; i++) {
         for(let j=0; j <= col; j++) {
-          rows[i].cells[j].bgColor = '#AAAAAA'
+          rows[i].cells[j].bgColor = '#f8f8f8'
         }
       }
     };
@@ -46,12 +46,12 @@ class LayoutTool extends PureComponent {
       let rows = this.tableRef.current.rows;
       for (let i=0; i <= 3; i++) {
         for(let j=0; j <= 3; j++) {
-          rows[i].cells[j].bgColor = '#6c5c89'
+          rows[i].cells[j].bgColor = '#70c4c5'
         }
       }
       for (let i=0; i <= row; i++) {
         for(let j=0; j <= col; j++) {
-          rows[i].cells[j].bgColor = '#AAAAAA'
+          rows[i].cells[j].bgColor = '#f8f8f8'
         }
       }
       this.props.onChange(row+1, col+1)

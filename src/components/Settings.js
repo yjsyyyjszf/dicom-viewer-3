@@ -32,6 +32,7 @@ import {
 const useStyles = makeStyles(theme => ({
   appBar: {
     position: 'relative',
+    backgroundColor:'#3d9c9f'
   },
   formControl: {
     margin: theme.spacing(3),

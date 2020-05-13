@@ -14,8 +14,8 @@ const HIST_HEIGHT = 128
 const N_BINS = 256
 
 const style = {
-  width: '273px', 
-  padding: '8px 8px 8px 8px', 
+  width: '273px',
+  padding: '8px 8px 8px 8px',
   backgroundColor: '#444444',
 }
 
@@ -75,9 +75,10 @@ class Histogram extends PureComponent {
       ctxH.translate(0, canvasH.height)
       ctxH.scale(1, -1)
 
-      this.updateCanvas()     
+      if (this.props.activeDcm.image)
+        this.updateCanvas()
     }
-    
+
     componentDidUpdate() {
       //console.log('Histogram - componentDidUpdate: ')
       if (this.props.activeDcm === null) {
@@ -85,7 +86,7 @@ class Histogram extends PureComponent {
         ctxH.clearRect(0, 0, ctxH.canvas.width, ctxH.canvas.height)
         return
       }
-      this.updateCanvas() 
+      this.updateCanvas()
     }
 
     getMousePos(canvas, evt) {
@@ -100,10 +101,10 @@ class Histogram extends PureComponent {
       const pixelData = this.props.activeDcm.image.getPixelData()
       const storedPixelData = []
       x = Math.round(x)
-      y = Math.round(y)   
+      y = Math.round(y)
       let index = 0
       let spIndex, row, column
-    
+
       for (row = 0; row < height; row++) {
         for (column = 0; column < width; column++) {
           spIndex = ((row + y) * this.props.activeDcm.image.rows + (column + x)) * 4
@@ -111,7 +112,7 @@ class Histogram extends PureComponent {
           const green = pixelData[spIndex + 1]
           const blue = pixelData[spIndex + 2]
           const alpha = pixelData[spIndex + 3]
-  
+
           storedPixelData[index++] = red
           storedPixelData[index++] = green
           storedPixelData[index++] = blue
@@ -125,18 +126,18 @@ class Histogram extends PureComponent {
       const pixelData = this.props.activeDcm.image.getPixelData()
       const storedPixelData = []
       x = Math.round(x)
-      y = Math.round(y)   
+      y = Math.round(y)
       let index = 0
       let spIndex, row, column
-    
+
       for (row = 0; row < height; row++) {
         for (column = 0; column < width; column++) {
-          spIndex = ((row + y) * this.props.activeDcm.image.rows + (column + x)) 
+          spIndex = ((row + y) * this.props.activeDcm.image.rows + (column + x))
           storedPixelData[index++] = pixelData[spIndex]
         }
       }
       return storedPixelData
-    }    
+    }
 
     getPixel(x, y) {
       let sp = []
@@ -188,25 +189,25 @@ class Histogram extends PureComponent {
       //console.log('stepWW: ', stepWW)
       //console.log('stepWC: ', stepWC)
       //console.log('zero256-stepWW: ', zero256-stepWW)
-      //console.log('zero256+stepWW: ', zero256+stepWW)   
+      //console.log('zero256+stepWW: ', zero256+stepWW)
       //console.log('image.color: ', image.color)
       //console.log('image.slope: ', image.slope)
       //console.log('image.intercept: ', image.intercept)
 
       let m = 0 // the mean
       // build histogram
-      let hist = Array(lenHist).fill(0) 
+      let hist = Array(lenHist).fill(0)
       for (let y = 0; y < image.columns; y++) {
         for (let x = 0; x < image.rows; x++) {
           let sp = this.getPixel(x, y)
           let mo = sp * image.slope + image.intercept
           hist[mo-minHist] += 1
           m += mo
-        } 
-      }  
+        }
+      }
 
       m = m / (image.columns * image.rows)
-      this.setState({mean: m})  
+      this.setState({mean: m})
 
       //console.log('hist: ', hist)
       //console.log('mean: ', m)
@@ -218,12 +219,12 @@ class Histogram extends PureComponent {
           let sp = this.getPixel(x, y)
           let mo = sp * image.slope + image.intercept
           s += Math.pow(mo-m, 2)
-        }  
+        }
       s = Math.sqrt(s / (image.columns * image.rows))
       this.setState({stdDev: s})
 
-      // binning the histogram 
-      let hist256 = Array(N_BINS).fill(0) 
+      // binning the histogram
+      let hist256 = Array(N_BINS).fill(0)
       let max = 0
 
       if (binSize < 1) {
@@ -231,23 +232,23 @@ class Histogram extends PureComponent {
         let iHist = 0
         let i = 0
         while (i < N_BINS) {
-          for (let j=0; j < binStep; j++) { 
+          for (let j=0; j < binStep; j++) {
             hist256[i] = iHist < lenHist ? hist[iHist] : 0
-            if (max < hist256[i]) max = hist256[i]  
+            if (max < hist256[i]) max = hist256[i]
             i++
-          }   
-          iHist++     
+          }
+          iHist++
         }
 
         /*for (let i=0; i < N_BINS; i+=binStep) {
           const k = Math.floor(i)
           //console.log(`i: ${k} `)
-          for (let j=0; j < Math.round(binStep); j++) { 
+          for (let j=0; j < Math.round(binStep); j++) {
             console.log(`i: ${k} - j: ${j} - iHist: ${iHist} - hist[iHist]: ${hist[iHist]}`)
             hist256[k+j] = hist[iHist]
           }
           iHist++
-          if (max < hist256[k]) max = hist256[k] 
+          if (max < hist256[k]) max = hist256[k]
         }*/
       } else {
         let step = 0
@@ -258,7 +259,7 @@ class Histogram extends PureComponent {
           }
           if (max < hist256[i]) { max = hist256[i] }
           step = Math.round(step+binSize)
-        }        
+        }
       }
 
       this.hist256 = hist256
@@ -267,7 +268,7 @@ class Histogram extends PureComponent {
       //console.log('max: ', max)
 
       if (max / HIST_HEIGHT > 100) max = max / 5
-      
+
       const canvasH = this.canvasHistogram.current
       const ctxH = this.canvasHistogram.current.getContext("2d")
       ctxH.clearRect(0, 0, ctxH.canvas.width, ctxH.canvas.height)
@@ -299,7 +300,7 @@ class Histogram extends PureComponent {
         ctxH.lineTo(i, h)
         ctxH.stroke()
       }
-      
+
       // draw WindowCenter cursor
       ctxH.beginPath()
       ctxH.strokeStyle = 'rgba(140, 140, 140, 0.5)'
@@ -307,7 +308,7 @@ class Histogram extends PureComponent {
       ctxH.lineTo(zero256+stepWC, HIST_HEIGHT)
       ctxH.lineWidth = 1
       ctxH.stroke()
-          
+
       let lowX = zero256-stepWW+stepWC
       let highX = zero256+stepWW+stepWC
 
@@ -324,7 +325,7 @@ class Histogram extends PureComponent {
       ctxG.fillStyle = grd
       ctxG.fillRect(lowX, 0, highX, 10)
     }
-        
+
     handleChangeValue = (event, newValue) => {
       //console.log('newValue: ', newValue)
       //console.log('(newValue*this.binSize)+this.state.minHist: ', (newValue*this.binSize)+this.state.minHist)
@@ -333,7 +334,7 @@ class Histogram extends PureComponent {
       this.setState({valueScale: (newValue*this.binSize)+this.state.minHist})
       this.setState({histCount: this.hist256[newValue]})
     }
-      
+
     hide = () => {
       this.props.onClose()
     }
@@ -347,11 +348,11 @@ class Histogram extends PureComponent {
         }
       })
     }
-  
+
     onStart = () => {
       this.setState({activeDrags: this.state.activeDrags+1})
     }
-  
+
     onStop = () => {
       this.setState({activeDrags: this.state.activeDrags-1})
     }
@@ -360,13 +361,13 @@ class Histogram extends PureComponent {
       return (
         <div style={style}>
           <div>
-            <canvas 
-              ref={this.canvasHistogram} 
-              width={HIST_WIDTH} 
-              height={HIST_HEIGHT} 
-              style={{backgroundColor: "#FFFFFF", cursor:'crosshair'}} 
+            <canvas
+              ref={this.canvasHistogram}
+              width={HIST_WIDTH}
+              height={HIST_HEIGHT}
+              style={{backgroundColor: "#FFFFFF", cursor:'crosshair'}}
             />
-          </div>  
+          </div>
           <div style={styleCanvasGradient}>
             <canvas ref={this.canvasGradient} width={HIST_WIDTH} height={10} style={{backgroundColor: "#FFFFFF"}} />
           </div>
